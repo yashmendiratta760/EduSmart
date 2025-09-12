@@ -1,0 +1,30 @@
+server:
+  port: ${PORT:8080}
+
+secret:
+  key: ${SECRET_KEY}
+
+
+spring:
+  application:
+    name: Resource Management
+
+
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      database: Resource_Management_db
+      auto-index-creation: true
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+
+google:
+  client_id: ${CLIENT_ID}
