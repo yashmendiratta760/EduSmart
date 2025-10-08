@@ -10,11 +10,19 @@ spring:
     name: Resource Management
 
 
-  data:
-    mongodb:
-      uri: ${MONGODB_URI}
-      database: Resource_Management_db
-      auto-index-creation: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/edusmart
+    username: yash
+    password: yash123
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
 
   mail:
     host: smtp.gmail.com
@@ -28,3 +36,4 @@ spring:
 
 google:
   client_id: ${CLIENT_ID}
+

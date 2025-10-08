@@ -1,34 +1,26 @@
 package com.yash.ResourceManagement.Entity;
 
-
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Setter;
-
 
 @Getter
 @Setter
 @Entity
-@Table(name = "users",uniqueConstraints = {
-        @UniqueConstraint(columnNames = "email")
-})
-public class UserEntity
-{
+@Table(name = "timetable")
+public class TimeTableEntry{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true,nullable = false)
-    private String email;
-
-    private String password;
-
-    @Column(nullable = false)
-    private String userType;
+    private String day;
+    private String subject;
+    private String timing;
 
     @ManyToOne
     @JoinColumn(name = "branch_id")
+    @JsonBackReference
     private Branch branch;
-
 }
+
