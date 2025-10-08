@@ -2,7 +2,7 @@ package com.yash.ResourceManagement.service;
 
 import com.yash.ResourceManagement.Entity.UserEntity;
 import com.yash.ResourceManagement.dto.UserDTO;
-import com.yash.ResourceManagement.repository.UserRepo;
+import com.yash.ResourceManagement.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 public class UserService
 {
     @Autowired
-    private UserRepo userRepo;
+    private UserRepository userRepo;
 
     public boolean existsByEmail(String email)
     {
@@ -28,6 +28,7 @@ public class UserService
             UserEntity user = new UserEntity();
             user.setEmail(userDTO.getEmail());
             user.setPassword(userDTO.getPassword());
+            user.setUserType(userDTO.getUserType());
             userRepo.save(user);
             return true;
         } catch (Exception e) {

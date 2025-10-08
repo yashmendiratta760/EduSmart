@@ -9,10 +9,12 @@ public class TempUserData
 {
     String password;
     String otp;
+    String userType;
 
-    public TempUserData(String pass,String otp)
+    public TempUserData(String pass,String otp,String userType)
     {
         this.password = pass;
         this.otp = otp;
+        this.userType=userType;
     }
 }

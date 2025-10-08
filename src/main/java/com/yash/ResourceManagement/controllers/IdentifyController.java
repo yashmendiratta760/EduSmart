@@ -52,6 +52,8 @@ public class IdentifyController
     public ResponseEntity<String> sendOtp(@RequestBody UserDTO user)
     {
         String email = user.getEmail();
+        String userType = user.getUserType();;
+        log.info(email);
         if(userService.existsByEmail(email))
         {
             log.info("Email already exist in database (Send-otp)");
@@ -60,7 +62,7 @@ public class IdentifyController
         String encodedPass = passwordEncoder.encode(user.getPassword());
 
         String otp = emailController.sendOtp(email);
-        tempUserData.put(email,new TempUserData(encodedPass,otp));
+        tempUserData.put(email,new TempUserData(encodedPass,otp,userType));
         log.info("Your otp is "+otp);
 
         return ResponseEntity.ok("Otp sent Successfully");
@@ -78,10 +80,10 @@ public class IdentifyController
         }
         if(tempData.getOtp().equals(otpData.getOtp()))
         {
-
             UserDTO user = new UserDTO();
             user.setEmail(email);
             user.setPassword(tempData.getPassword());
+            user.setUserType(tempData.getUserType());
             boolean created = userService.createEntry(user);
             if(created) {
                 String token = jwtUtils.generateToken(email);
