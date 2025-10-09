@@ -7,5 +7,6 @@ public interface BranchRepo extends JpaRepository<Branch,Long>
 {
     Branch findByName(String name);
     boolean existsByName(String name);
+    Branch findByNameAndSemester(String name,int semester);
 }
 

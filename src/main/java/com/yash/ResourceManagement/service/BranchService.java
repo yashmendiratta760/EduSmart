@@ -26,5 +26,8 @@ public class BranchService
         branchRepo.save(branch);
 
     }
+    public Branch getByNameAndSemester(String name,int sem){
+        return branchRepo.findByNameAndSemester(name,sem);
+    }
 
 }

@@ -38,5 +38,9 @@ public class TimeTableService
         return timeTableRepo.findByBranchName(branch);
     }
 
+    public TimeTableEntry getAttendanceUploadSlot(String day, String subject, Branch branch,String time){
+        return timeTableRepo.findByDayAndSubjectAndBranchAndTiming(day, subject, branch,time);
+    }
+
 
 }
