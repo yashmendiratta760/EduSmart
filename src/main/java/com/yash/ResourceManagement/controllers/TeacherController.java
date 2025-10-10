@@ -12,6 +12,7 @@ import com.yash.ResourceManagement.service.AttendanceService;
 import com.yash.ResourceManagement.service.BranchService;
 import com.yash.ResourceManagement.service.TimeTableService;
 import com.yash.ResourceManagement.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-
+@Slf4j
 @RestController
 @RequestMapping("/teacher")
 public class TeacherController
@@ -60,18 +61,35 @@ public class TeacherController
 
     @PostMapping("/uploadAttendance")
     public ResponseEntity<String> uploadAttendance(@RequestBody AttendanceUploadDTO uploadDTO){
-        uploadDTO.getStudentEmails().forEach(student-> {
+        int success = 0,fail = 0;
+        for (String student : uploadDTO.getStudentEmails()){
             Branch branch = branchService.getByNameAndSemester(uploadDTO.getBranch(), uploadDTO.getSemester());
-            TimeTableEntry timeTableEntry =  timeTableService.getAttendanceUploadSlot(uploadDTO.getDay(),
+            TimeTableEntry timeTableEntry =  timeTableService.getAttendanceUploadSlot(uploadDTO.getDate().getDayOfWeek().name(),
                     uploadDTO.getSubjectName(),branch,
                     uploadDTO.getTime());
 
-            attendanceService.createEntry(timeTableEntry,uploadDTO.getStatus(),
-                    userService.findByEmail(student), LocalDate.now());
-        });
-
-
-
-        return ResponseEntity.ok("Uploaded");
+            if (timeTableEntry != null) {
+                success++;
+                attendanceService.createEntry(
+                        timeTableEntry,
+                        uploadDTO.getStatus(),
+                        userService.findByEmail(student),
+                        uploadDTO.getDate()
+                );
+            } else {
+                fail++;
+            }
+        }
+        if (success == 0) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("Attendance upload failed. No entries were created.");
+        } else if (fail > 0) {
+            return ResponseEntity
+                    .ok("⚠Attendance partially uploaded. Success: " + success + ", Failed: " + fail);
+        } else {
+            return ResponseEntity
+                    .ok("Attendance uploaded successfully");
+        }
     }
 }
