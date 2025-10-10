@@ -1,9 +1,16 @@
 package com.yash.ResourceManagement.controllers;
 
+import com.yash.ResourceManagement.Entity.Branch;
 import com.yash.ResourceManagement.Entity.TimeTableEntry;
+import com.yash.ResourceManagement.Entity.UserEntity;
+import com.yash.ResourceManagement.dto.AttendanceDTO;
+import com.yash.ResourceManagement.dto.AttendanceUploadDTO;
 import com.yash.ResourceManagement.dto.TimeTableDTO;
+import com.yash.ResourceManagement.service.AttendanceService;
 import com.yash.ResourceManagement.service.BranchService;
 import com.yash.ResourceManagement.service.TimeTableService;
+import com.yash.ResourceManagement.service.UserService;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +25,15 @@ public class StudentController
 
     @Autowired
     private TimeTableService timeTableService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private BranchService branchService;
+
+    @Autowired
+    private AttendanceService attendanceService;
 
     @GetMapping("/getTimeTableByDay")
     public ResponseEntity<List<TimeTableDTO>> getTimeTableByDays(
@@ -37,5 +53,14 @@ public class StudentController
 
         return ResponseEntity.ok(timeTableDTOS);
     }
+
+    @GetMapping("/getAttendance")
+    public ResponseEntity<List<AttendanceDTO>> getAttendance(@RequestParam String email){
+        Long studentId = userService.findByEmail(email).getId();
+        List<AttendanceDTO> attendanceDTOList = attendanceService.getAttendance(studentId);
+        return ResponseEntity.ok(attendanceDTOList);
+    }
+
+
 
 }

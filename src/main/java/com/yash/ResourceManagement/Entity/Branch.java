@@ -23,7 +23,7 @@ public class Branch
     private String name;
 
     @Column(nullable = false)
-    private String semester;
+    private int semester;
 
     @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
