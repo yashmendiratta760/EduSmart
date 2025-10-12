@@ -8,6 +8,7 @@ import com.yash.ResourceManagement.repository.TimeTableRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.sql.Time;
 import java.util.List;
 
 @Service
@@ -33,9 +34,14 @@ public class TimeTableService
         timeTableRepo.save(timeTableEntry);
     }
 
-    public List<TimeTableEntry> getEntryByBranch(String branch)
+    public List<TimeTableEntry> getEntryByBranchAndSemester(String branch,int semester)
     {
-        return timeTableRepo.findByBranchName(branch);
+        List<TimeTableEntry> timeTableEntries =  timeTableRepo.findByBranchName(branch);
+        List<TimeTableEntry> filteredEntries = timeTableEntries
+                .stream()
+                .filter(it -> it.getBranch().getSemester() == semester)
+                .toList();
+        return filteredEntries;
     }
 
     public TimeTableEntry getAttendanceUploadSlot(String day, String subject, Branch branch,String time){

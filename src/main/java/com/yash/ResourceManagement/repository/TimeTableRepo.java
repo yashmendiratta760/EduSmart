@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface TimeTableRepo extends JpaRepository<TimeTableEntry,Long>
 {
-    List<TimeTableEntry> findByBranchName(String branchName);
+    List<TimeTableEntry> findByBranchName(String branch);
     TimeTableEntry findByDayAndSubjectAndBranchAndTiming(String day, String subject, Branch branch,String time);
 
 }

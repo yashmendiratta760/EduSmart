@@ -37,9 +37,11 @@ public class StudentController
 
     @GetMapping("/getTimeTableByDay")
     public ResponseEntity<List<TimeTableDTO>> getTimeTableByDays(
-            @RequestParam String branch)
+            @RequestParam String branch,
+            @RequestParam String semester)
     {
-        List<TimeTableEntry> timeTableEntries =  timeTableService.getEntryByBranch(branch);
+        List<TimeTableEntry> timeTableEntries =  timeTableService.getEntryByBranchAndSemester(branch,Integer.parseInt(semester));
+
         List<TimeTableDTO> timeTableDTOS = new ArrayList<>();
         for (int i = 0; i < timeTableEntries.size(); i++) {
             timeTableDTOS.add(new TimeTableDTO(
