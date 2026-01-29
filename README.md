@@ -3,6 +3,7 @@
 EduSmart is a role-based education management backend that connects 👨‍🎓 Students, 👩‍🏫 Teachers, and 👨‍💼 Admins on a single platform. It provides secure authentication, academic management features, and real-time communication using REST APIs and WebSocket technology.
 
 🧑‍🤝‍🧑 USER ROLES
+
 • 👨‍🎓 Student  
   – Secure login  
   – View attendance  
