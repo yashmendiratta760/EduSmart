@@ -21,6 +21,7 @@ EduSmart is a role-based education management backend that connects 👨‍🎓 
   – Control system-level operations  
 
 ✨ KEY FEATURES
+
 • 🔐 JWT-based authentication & authorization  
 • 🧭 Role-based access control (Student / Teacher / Admin)  
 • 📊 Attendance management system  
@@ -32,6 +33,7 @@ EduSmart is a role-based education management backend that connects 👨‍🎓 
 • ⚡ WebSocket communication using STOMP  
 
 🔑 AUTHENTICATION FLOW
+
 • User logs in with credentials  
 • Backend validates user & role  
 • JWT token is generated  
@@ -41,6 +43,7 @@ Example:
 Authorization: Bearer <JWT_TOKEN>
 
 🛠️ TECH STACK
+
 • ☕ Java  
 • 🚀 Spring Boot  
 • 🛡️ Spring Security  
@@ -51,15 +54,18 @@ Authorization: Bearer <JWT_TOKEN>
 • 🗂️ Git & GitHub  
 
 🏗️ ARCHITECTURE HIGHLIGHTS
+
 • Layered architecture (Controller → Service → Repository)  
 • Stateless backend design  
 • Scalable and maintainable code structure  
 
 🎯 PROJECT HIGHLIGHTS
+
 • Real-world education platform backend  
 • Secure role-based system  
 • REST + WebSocket integration  
 • Clean API documentation & testing  
 
 📝 ONE-LINE SUMMARY
+
 EduSmart is a Spring Boot–based backend system that connects students, teachers, and admins, providing secure authentication, attendance and timetable management, and real-time chat using REST APIs and WebSocket (STOMP).
