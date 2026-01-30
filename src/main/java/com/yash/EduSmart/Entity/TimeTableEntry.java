@@ -17,11 +17,14 @@ public class TimeTableEntry {
     private String day;
     private String subject;
     private String timing;
-    private String teacher_name;
 
     @ManyToOne
     @JoinColumn(name = "branch_id")
     @JsonBackReference
     private Branch branch;
+
+    @ManyToOne
+    @JoinColumn(name = "teacher_id")
+    private UserEntity teacher;
 }
 

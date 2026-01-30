@@ -11,4 +11,6 @@ public interface TimeTableRepo extends JpaRepository<TimeTableEntry, Long> {
 
     TimeTableEntry findByDayAndSubjectAndBranchAndTiming(String day, String subject, Branch branch, String time);
 
+    List<TimeTableEntry> findByTeacherId(Long id);
+
 }

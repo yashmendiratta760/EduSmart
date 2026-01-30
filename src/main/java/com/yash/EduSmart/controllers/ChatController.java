@@ -31,63 +31,116 @@ public class ChatController
         this.messagingTemplate = messagingTemplate;
     }
 
+    private static String safeTrim(String s) {
+        return s == null ? "" : s.trim();
+    }
+
 
     @MessageMapping("/chat.sendPrivateMessage")
     public void sendPrivateMessage(
             @Payload ChatMessage message,
             Principal principal
     ){
-        log.error("Message hit");
-        String sender = principal.getName();
-        log.error(sender);
-        log.error(message.getReceiver());
+        try{
+            if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
+                return;
+            }
+            String receiver = safeTrim(message.getReceiver());
+            String text = safeTrim(message.getMessage());
+            if (receiver.isEmpty() || text.isEmpty()) return;
 
-        message.setSender(sender);
-        log.error(message.getMessage());
+            String sender = principal.getName();
 
-        messagingTemplate.convertAndSendToUser(
-                message.getReceiver(),
-                "/queue/messages",
-                message
+            message.setSender(sender);
+            message.setReceiver(receiver);
+            message.setMessage(text);
 
-        );
+            // sends to /user/{receiver}/queue/messages
+            messagingTemplate.convertAndSendToUser(receiver, "/queue/messages", message);
+
+        } catch (Exception ignored) {
+
+        }
 
     }
 
     @MessageMapping("/group.sendMessage/{groupId}")
     @SendTo("/topic/group.receiveMessage/{groupId}")
-    public ChatMessage sendGroupMessage(
-            @DestinationVariable String groupId,
-            ChatMessage message,
-            Principal principal
-    ){
-        message.setSender(principal.getName());
-        return message;
+    public ChatMessage sendGroupMessage(@DestinationVariable String groupId,
+                                        @Payload ChatMessage message,
+                                        Principal principal) {
+        try {
+            if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
+                return null;
+            }
+            if (message == null) return null;
+
+            String gid = safeTrim(groupId);
+            if (gid.isEmpty()) return null;
+
+            String text = safeTrim(message.getMessage());
+            if (text.isEmpty()) return null;
+
+            message.setSender(principal.getName());
+            message.setReceiver(gid);
+            message.setMessage(text);
+
+            return message;
+
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     @MessageMapping("/assignment.send/{groupId}")
     @SendTo("/topic/assignment.receive/{groupId}")
-    public Assignment sendAssignment(
-            @DestinationVariable String groupId,
-            Assignment assignment,
-            Principal principal
-    ){
-        String[] parts = groupId.split("\\s+");
+    public Assignment sendAssignment(@DestinationVariable String groupId,
+                                     @Payload Assignment assignment,
+                                     Principal principal) {
+        try {
+            if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
+                return null;
+            }
+            if (assignment == null) return null;
 
-        String branch = parts[0];   // "CSE"
-        System.out.println("BRANCH" + branch);
-        String semester = parts[1]; // "3"
+            String gid = safeTrim(groupId);
+            if (gid.isEmpty()) return null;
 
-        assignment.setSender(principal.getName());
-        assignment.setReceiver(groupId);
-        Long id = assignmentService.createEntry(new AssignmentDTO(
-                assignment.getTask(),
-                assignment.getDeadline(),
-                branch,
-                semester
-        ));
-        assignment.setId(id);
-        return assignment;
+            // Expecting "CSE 3" (branch + semester)
+            String[] parts = gid.split("\\s+");
+            if (parts.length < 2) return null;
+
+            String branch = safeTrim(parts[0]);
+            String semester = safeTrim(parts[1]);
+            if (branch.isEmpty() || semester.isEmpty()) return null;
+
+            // Validate assignment fields
+            String task = safeTrim(assignment.getTask());
+            if (task.isEmpty()) return null;
+
+            // deadline could be String/Date/Long depending on your DTO
+            // If it's a String, you can validate non-empty:
+            Object deadlineObj = assignment.getDeadline();
+            if (deadlineObj == null) return null;
+
+            assignment.setSender(principal.getName());
+            assignment.setReceiver(gid);
+
+            Long id = assignmentService.createEntry(new AssignmentDTO(
+                    task,
+                    assignment.getDeadline(),
+                    branch,
+                    semester
+            ));
+
+            if (id == null) return null;
+
+            assignment.setId(id);
+            return assignment;
+
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
 }

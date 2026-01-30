@@ -34,6 +34,10 @@ public class AssignmentService {
 
     }
 
+    public void deleteEntry(Long id){
+        assignmentRepo.deleteById(id);
+    }
+
     public void updateEntry(UserEntity userEntity,Long id){
         AssignmentEntity assignment = assignmentRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Assignment not found with id: " + id));
