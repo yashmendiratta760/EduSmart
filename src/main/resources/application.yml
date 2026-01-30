@@ -12,9 +12,9 @@ spring:
 
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/edusmart
-    username: yash
-    password: yash123
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASS}
 
   jpa:
     show-sql: true
