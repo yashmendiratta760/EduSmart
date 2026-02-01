@@ -1,10 +1,13 @@
 package com.yash.EduSmart.controllers;
 
+import com.yash.EduSmart.Entity.ChatEntity;
 import com.yash.EduSmart.Entity.HolidayEntity;
 import com.yash.EduSmart.Entity.TimeTableEntry;
 import com.yash.EduSmart.Entity.UserEntity;
 import com.yash.EduSmart.dto.*;
 import com.yash.EduSmart.service.*;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/student")
 public class StudentController {
@@ -33,6 +37,9 @@ public class StudentController {
 
     @Autowired
     private AttendanceService attendanceService;
+
+    @Autowired
+    private ChatService chatService;
 
     @GetMapping("/getTimeTableByDay")
     public ResponseEntity<List<TimeTableDTO>> getTimeTableByDays(
@@ -245,6 +252,73 @@ public class StudentController {
                     .body(Collections.emptyList());
         }
     }
+
+    @GetMapping("/getMessagesByBranchAndSem")
+    public ResponseEntity<List<ChatEntity>> getGroupMessagesStudent(
+            @RequestParam String branch,
+            @RequestParam String sem
+    ){
+        try {
+            List<ChatEntity> list = chatService.getMessageByReceiver(branch+" "+sem);
+            return ResponseEntity.ok(list);
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
+    }
+
+    @GetMapping("/getPvtMsg")
+    public ResponseEntity<List<ChatEntity>> getPvtMessagesStudent(
+            @RequestParam String email,
+            @RequestParam String receiverEmail
+    ){
+        try {
+            String a = safeTrim(email);
+            String b = safeTrim(receiverEmail);
+            if (a.isEmpty() || b.isEmpty()) {
+                return ResponseEntity.badRequest().body(Collections.emptyList());
+            }
+
+            List<ChatEntity> list = chatService.getConversation(a, b);
+            return ResponseEntity.ok(list);
+
+        } catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
+    }
+
+
+    @PutMapping("/addPvtMsg")
+    public ResponseEntity<String> sendMsg(@RequestBody ChatEntity chatEntity){
+        try {
+            chatService.addMessage(chatEntity);
+            return ResponseEntity.ok("Sent");
+
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error Occurred");
+        }
+    }
+
+    @GetMapping("/getAllTeachers")
+    public ResponseEntity<List<TeacherDTO>> getAllTeacher(
+            @RequestParam String branch,
+            @RequestParam String sem
+    ){
+        try {
+            System.out.println("HIT /student/getAllTeachers branch=" + branch + " sem=" + sem);
+            log.error("HIT /student/getAllTeachers branch={} sem={}", branch, sem);
+            List<TeacherDTO> users = timeTableService.findTeachersByBranchAndSem(branch,sem)
+                    .stream().map(it->
+                            new TeacherDTO(it.getName(),it.getEmail())).toList();
+            log.error("TEACHER {}",users);
+            return ResponseEntity.ok(users);
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
+    }
+
+
 
     private static String safeTrim(String s) {
         return s == null ? "" : s.trim();

@@ -2,13 +2,17 @@ package com.yash.EduSmart.service;
 
 import com.yash.EduSmart.Entity.Branch;
 import com.yash.EduSmart.Entity.TimeTableEntry;
+import com.yash.EduSmart.Entity.UserEntity;
 import com.yash.EduSmart.dto.TimeTableDTO;
 import com.yash.EduSmart.repository.BranchRepo;
 import com.yash.EduSmart.repository.TimeTableRepo;
+import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class TimeTableService {
@@ -53,6 +57,18 @@ public class TimeTableService {
                 it.getSubject()).toList();
         return subjects;
     }
+
+    public List<UserEntity> findTeachersByBranchAndSem(String branch, String sem) {
+        Branch b = branchRepo.findByNameAndSemester(branch, Integer.parseInt(sem));
+        if (b == null) return Collections.emptyList();
+
+        return timeTableRepo.findByBranch(b).stream()
+                .map(TimeTableEntry::getTeacher)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+    }
+
 
 
 }

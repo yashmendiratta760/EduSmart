@@ -15,4 +15,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     List<UserEntity> findByBranch(Branch branch);
 
     UserEntity findByEnroll(String enroll);
+
+
 }

@@ -13,4 +13,6 @@ public interface TimeTableRepo extends JpaRepository<TimeTableEntry, Long> {
 
     List<TimeTableEntry> findByTeacherId(Long id);
 
+    List<TimeTableEntry> findByBranch(Branch branch);
+
 }

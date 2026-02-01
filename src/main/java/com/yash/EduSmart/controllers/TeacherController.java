@@ -24,6 +24,9 @@ public class TeacherController {
     private UserService userService;
 
     @Autowired
+    private ChatService chatService;
+
+    @Autowired
     private AttendanceService attendanceService;
 
     @Autowired
@@ -333,6 +336,41 @@ public class TeacherController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }
+
+    @GetMapping("/getMessagesByEmailAndBranchAndSem")
+    public ResponseEntity<List<ChatEntity>> getGroupMessages(
+            @RequestParam String email,
+            @RequestParam String branch,
+            @RequestParam String sem
+    ){
+        try {
+            List<ChatEntity> list = chatService.getMessageBySender(email,branch+" "+sem);
+            return ResponseEntity.ok(list);
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
+    }
+
+    @GetMapping("/getPvtMsg")
+    public ResponseEntity<List<ChatEntity>> getPvtMessages(
+            @RequestParam String email,
+            @RequestParam String receiverEmail
+    ){
+        try {
+            String a = safeTrim(email);
+            String b = safeTrim(receiverEmail);
+            if (a.isEmpty() || b.isEmpty()) {
+                return ResponseEntity.badRequest().body(Collections.emptyList());
+            }
+
+            List<ChatEntity> list = chatService.getConversation(a, b);
+            return ResponseEntity.ok(list);
+
+        } catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
+    }
+
 
     private static String safeTrim(String s) {
         return s == null ? "" : s.trim();
