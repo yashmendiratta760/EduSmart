@@ -47,4 +47,12 @@ public class AttendanceService {
         entity.setStatus(status);
         attendanceRepo.save(entity);
     }
+
+    public List<Attendance> getAllEntry(TimeTableEntry timeTableEntry,LocalDate date,List<String> emails){
+        return attendanceRepo.findAllForUpload(timeTableEntry,date,emails);
+    }
+
+    public void saveAll(List<Attendance> attendances){
+        attendanceRepo.saveAll(attendances);
+    }
 }

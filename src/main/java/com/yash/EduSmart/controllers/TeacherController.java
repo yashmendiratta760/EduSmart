@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/teacher")
@@ -32,46 +33,46 @@ public class TeacherController {
     @Autowired
     private AssignmentService assignmentService;
 
-    @PostMapping("/time-table-upload")
-    public ResponseEntity<String> timeTableEntry(@RequestBody(required = false) TimeTableDTO timeTableDTO) {
-        try {
-            if (timeTableDTO == null) return ResponseEntity.badRequest().body("Request body missing");
-
-            // Basic field checks (adjust according to your DTO fields)
-            String day = safeTrim(timeTableDTO.getDay());
-            String subject = safeTrim(timeTableDTO.getSubject());
-            String timing = safeTrim(timeTableDTO.getTime());
-            String branch = safeTrim(timeTableDTO.getBranch());
-
-            if (day.isEmpty() || subject.isEmpty() || timing.isEmpty() || branch.isEmpty()) {
-                return ResponseEntity.badRequest().body("Some field is empty");
-            }
-
-            timeTableService.createEntry(timeTableDTO);
-            return ResponseEntity.ok("Entry Created");
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred");
-        }
-    }
-
-    @PostMapping("/branch-add")
-    public ResponseEntity<String> addBranch(@RequestBody(required = false) BranchDTO branchDTO) {
-        try {
-            if (branchDTO == null) return ResponseEntity.badRequest().body("Request body missing");
-
-            String name = safeTrim(branchDTO.getName());
-            if (name.isEmpty()) {
-                return ResponseEntity.badRequest().body("Branch name is required");
-            }
-
-            branchService.createBranch(name);
-            return ResponseEntity.ok("Branch added successfully");
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Some error occurred in adding branch");
-        }
-    }
+//    @PostMapping("/time-table-upload")
+//    public ResponseEntity<String> timeTableEntry(@RequestBody(required = false) TimeTableDTO timeTableDTO) {
+//        try {
+//            if (timeTableDTO == null) return ResponseEntity.badRequest().body("Request body missing");
+//
+//            // Basic field checks (adjust according to your DTO fields)
+//            String day = safeTrim(timeTableDTO.getDay());
+//            String subject = safeTrim(timeTableDTO.getSubject());
+//            String timing = safeTrim(timeTableDTO.getTime());
+//            String branch = safeTrim(timeTableDTO.getBranch());
+//
+//            if (day.isEmpty() || subject.isEmpty() || timing.isEmpty() || branch.isEmpty()) {
+//                return ResponseEntity.badRequest().body("Some field is empty");
+//            }
+//
+//            timeTableService.createEntry(timeTableDTO);
+//            return ResponseEntity.ok("Entry Created");
+//
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred");
+//        }
+//    }
+//
+//    @PostMapping("/branch-add")
+//    public ResponseEntity<String> addBranch(@RequestBody(required = false) BranchDTO branchDTO) {
+//        try {
+//            if (branchDTO == null) return ResponseEntity.badRequest().body("Request body missing");
+//
+//            String name = safeTrim(branchDTO.getName());
+//            if (name.isEmpty()) {
+//                return ResponseEntity.badRequest().body("Branch name is required");
+//            }
+//
+//            branchService.createBranch(name);
+//            return ResponseEntity.ok("Branch added successfully");
+//
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Some error occurred in adding branch");
+//        }
+//    }
 
     @PostMapping("/uploadAttendance")
     public ResponseEntity<String> uploadAttendance(@RequestBody(required = false) AttendanceUploadDTO uploadDTO) {
@@ -114,7 +115,34 @@ public class TeacherController {
 
             int success = 0, fail = 0;
 
-            for (AttendanceStatus attendance : list) {
+
+            List<String> emails = uploadDTO.getAttendance().stream()
+                    .map(AttendanceStatus::getEmail)
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(e -> !e.isEmpty())
+                    .distinct()
+                    .toList();
+
+            List<UserEntity> users = userService.findByEmails(emails);
+            Map<String, UserEntity> userMap = users.stream()
+                    .collect(Collectors.toMap(UserEntity::getEmail, u -> u));
+
+            List<Attendance> existing = attendanceService.getAllEntry(
+                    timeTableEntry,
+                    uploadDTO.getDate(),
+                    emails
+            );
+
+            Map<String, Attendance> attendanceMap = existing.stream()
+                    .collect(Collectors.toMap(
+                            a -> a.getStudent().getEmail(),
+                            a -> a
+                    ));
+
+
+            List<Attendance> toSave = new ArrayList<>();
+            for (AttendanceStatus attendance : uploadDTO.getAttendance()) {
                 try {
                     if (attendance == null) {
                         fail++;
@@ -127,24 +155,38 @@ public class TeacherController {
                         continue;
                     }
 
-                    UserEntity userEntity = userService.findByEmail(email);
-                    if (userEntity == null) {
+                    UserEntity user = userMap.get(email);
+                    if (user == null) {
+                        // 🔴 user not found in DB
                         fail++;
                         continue;
                     }
 
-                    Attendance entity = attendanceService.findEntry(userEntity, timeTableEntry, uploadDTO.getDate());
+                    Attendance entity = attendanceMap.get(email);
+
                     if (entity != null) {
-                        attendanceService.updateEntry(entity, attendance.getStatus());
+                        entity.setStatus(attendance.getStatus());
+                        // entity.setUpdatedAt(...) if you have it
+                        toSave.add(entity);
                     } else {
-                        attendanceService.createEntry(timeTableEntry, attendance.getStatus(), userEntity, uploadDTO.getDate());
+                        Attendance newEntry = new Attendance();
+                        newEntry.setStudent(user);
+                        newEntry.setTimeTable(timeTableEntry);
+                        newEntry.setDate(uploadDTO.getDate());
+                        newEntry.setStatus(attendance.getStatus());
+                        toSave.add(newEntry);
                     }
+
                     success++;
 
-                } catch (Exception inner) {
+                } catch (Exception ex) {
                     fail++;
                 }
             }
+
+            if (!toSave.isEmpty()) attendanceService.saveAll(toSave);
+
+
 
             if (success == 0) {
                 return ResponseEntity.badRequest().body("Attendance upload failed. No entries were created.");
@@ -179,23 +221,12 @@ public class TeacherController {
                 return ResponseEntity.badRequest().body(Collections.emptyList());
             }
 
-            List<TimeTableEntry> entries = timeTableService.getEntryByBranchAndSemester(b, sem);
+            List<TimeTableDTO> entries = timeTableService.getEntryByBranchAndSemester(b, sem);
             if (entries == null || entries.isEmpty()) {
                 return ResponseEntity.ok(Collections.emptyList());
             }
 
             List<TimeTableDTO> dtos = new ArrayList<>();
-            for (TimeTableEntry e : entries) {
-                if (e == null) continue;
-
-                dtos.add(new TimeTableDTO(
-                        safeTrim(e.getDay()),
-                        safeTrim(e.getSubject()),
-                        safeTrim(e.getTiming()),
-                        e.getBranch() != null ? safeTrim(e.getBranch().getName()) : ""
-                ));
-            }
-
             return ResponseEntity.ok(dtos);
 
         } catch (Exception e) {
@@ -337,14 +368,13 @@ public class TeacherController {
         }
     }
 
-    @GetMapping("/getMessagesByEmailAndBranchAndSem")
+    @GetMapping("/getMessagesByBranchAndSem")
     public ResponseEntity<List<ChatEntity>> getGroupMessages(
-            @RequestParam String email,
             @RequestParam String branch,
             @RequestParam String sem
     ){
         try {
-            List<ChatEntity> list = chatService.getMessageBySender(email,branch+" "+sem);
+            List<ChatEntity> list = chatService.getMessageByReceiver(branch+" "+sem);
             return ResponseEntity.ok(list);
         }catch (Exception e){
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());

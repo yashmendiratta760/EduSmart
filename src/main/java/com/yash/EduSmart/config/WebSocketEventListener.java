@@ -27,11 +27,6 @@ public class WebSocketEventListener
         StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
         Principal principal = headerAccessor.getUser();
         if (principal!=null){
-            log.info(
-                    "Session {} disconnected, user={}",
-                    headerAccessor.getSessionId(),
-                    principal != null ? principal.getName() : "unknown"
-            );
             var chatMessage = ChatMessage.builder().sender(principal.getName()).messageType(MessageType.LEAVE).build();
             messagingTemplate.convertAndSend("/queue/messages",chatMessage);
         }

@@ -3,6 +3,7 @@ package com.yash.EduSmart.service;
 import com.yash.EduSmart.Entity.Branch;
 import com.yash.EduSmart.Entity.TimeTableEntry;
 import com.yash.EduSmart.Entity.UserEntity;
+import com.yash.EduSmart.dto.TeacherDTO;
 import com.yash.EduSmart.dto.TimeTableDTO;
 import com.yash.EduSmart.repository.BranchRepo;
 import com.yash.EduSmart.repository.TimeTableRepo;
@@ -39,13 +40,9 @@ public class TimeTableService {
         timeTableRepo.save(timeTableEntry);
     }
 
-    public List<TimeTableEntry> getEntryByBranchAndSemester(String branch, int semester) {
-        List<TimeTableEntry> timeTableEntries = timeTableRepo.findByBranchName(branch);
-        List<TimeTableEntry> filteredEntries = timeTableEntries
-                .stream()
-                .filter(it -> it.getBranch().getSemester() == semester)
-                .toList();
-        return filteredEntries;
+    public List<TimeTableDTO> getEntryByBranchAndSemester(String branch, int semester) {
+        List<TimeTableDTO> timeTableEntries = timeTableRepo.findByBranchAndSemester(branch,semester);
+        return timeTableEntries;
     }
 
     public TimeTableEntry getAttendanceUploadSlot(String day, String subject, Branch branch, String time) {
@@ -58,15 +55,8 @@ public class TimeTableService {
         return subjects;
     }
 
-    public List<UserEntity> findTeachersByBranchAndSem(String branch, String sem) {
-        Branch b = branchRepo.findByNameAndSemester(branch, Integer.parseInt(sem));
-        if (b == null) return Collections.emptyList();
-
-        return timeTableRepo.findByBranch(b).stream()
-                .map(TimeTableEntry::getTeacher)
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList();
+    public List<TeacherDTO> findTeachersByBranchAndSemDto(String branch, String sem) {
+        return timeTableRepo.findTeacherDtos(branch, Integer.parseInt(sem));
     }
 
 

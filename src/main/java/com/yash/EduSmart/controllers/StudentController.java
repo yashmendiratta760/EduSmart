@@ -61,22 +61,11 @@ public class StudentController {
                 return ResponseEntity.badRequest().body(Collections.emptyList());
             }
 
-            List<TimeTableEntry> entries = timeTableService.getEntryByBranchAndSemester(b, sem);
-            if (entries == null || entries.isEmpty()) {
+            List<TimeTableDTO> dtos = timeTableService.getEntryByBranchAndSemester(b, sem);
+            if (dtos == null || dtos.isEmpty()) {
                 return ResponseEntity.ok(Collections.emptyList());
             }
 
-            List<TimeTableDTO> dtos = new ArrayList<>();
-            for (TimeTableEntry e : entries) {
-                if (e == null) continue;
-
-                String day = safeTrim(e.getDay());
-                String subject = safeTrim(e.getSubject());
-                String timing = safeTrim(e.getTiming());
-                String branchName = (e.getBranch() != null) ? safeTrim(e.getBranch().getName()) : "";
-
-                dtos.add(new TimeTableDTO(day, subject, timing, branchName));
-            }
 
             return ResponseEntity.ok(dtos);
 
@@ -217,21 +206,8 @@ public class StudentController {
     @GetMapping("/getAssignment")
     public ResponseEntity<List<AssignmentStudent>> getAll() {
         try {
-            var all = assignmentService.getAll();
-            if (all == null || all.isEmpty()) {
-                return ResponseEntity.ok(Collections.emptyList());
-            }
+            List<AssignmentStudent> result = assignmentService.findAllForStudent();
 
-            List<AssignmentStudent> result = all.stream()
-                    .filter(Objects::nonNull)
-                    .map(it -> new AssignmentStudent(
-                            it.getId(),
-                            it.getBranch() != null ? safeTrim(it.getBranch().getName()) : "",
-                            it.getBranch() != null ? String.valueOf(it.getBranch().getSemester()) : "",
-                            safeTrim(it.getAssignment()),
-                            it.getDeadline()
-                    ))
-                    .toList();
 
             return ResponseEntity.ok(result);
 
@@ -305,12 +281,7 @@ public class StudentController {
             @RequestParam String sem
     ){
         try {
-            System.out.println("HIT /student/getAllTeachers branch=" + branch + " sem=" + sem);
-            log.error("HIT /student/getAllTeachers branch={} sem={}", branch, sem);
-            List<TeacherDTO> users = timeTableService.findTeachersByBranchAndSem(branch,sem)
-                    .stream().map(it->
-                            new TeacherDTO(it.getName(),it.getEmail())).toList();
-            log.error("TEACHER {}",users);
+            List<TeacherDTO> users = timeTableService.findTeachersByBranchAndSemDto(branch,sem);
             return ResponseEntity.ok(users);
         }catch (Exception e){
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

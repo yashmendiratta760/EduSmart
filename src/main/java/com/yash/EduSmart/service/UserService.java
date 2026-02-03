@@ -27,6 +27,10 @@ public class UserService {
         return userRepo.findByEmail(email);
     }
 
+    public List<UserEntity> findByEmails(List<String> email) {
+        return userRepo.findByEmailIn(email);
+    }
+
     public UserEntity findByEnroll(String enroll){
         return userRepo.findByEnroll(enroll);
     }

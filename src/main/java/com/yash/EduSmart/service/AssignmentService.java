@@ -4,9 +4,11 @@ import com.yash.EduSmart.Entity.AssignmentEntity;
 import com.yash.EduSmart.Entity.Branch;
 import com.yash.EduSmart.Entity.UserEntity;
 import com.yash.EduSmart.dto.AssignmentDTO;
+import com.yash.EduSmart.dto.AssignmentStudent;
 import com.yash.EduSmart.repository.AssignmentRepo;
 import com.yash.EduSmart.repository.BranchRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -54,5 +56,11 @@ public class AssignmentService {
     public List<AssignmentEntity> getAll(){
         return assignmentRepo.findAll();
     }
+
+    public List<AssignmentStudent> findAllForStudent(){
+        return assignmentRepo.findAllForStudent();
+    }
+
+
 
 }
