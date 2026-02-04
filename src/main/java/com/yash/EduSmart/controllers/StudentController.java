@@ -203,13 +203,20 @@ public class StudentController {
         }
     }
 
-    @GetMapping("/getAssignment")
-    public ResponseEntity<List<AssignmentStudent>> getAll() {
+    @GetMapping("/getAllAssignmentsByBranchAndSem")
+    public ResponseEntity<List<AssignmentStudent>> getAll(
+            @RequestParam String branch,
+            @RequestParam String sem
+    ) {
         try {
-            List<AssignmentStudent> result = assignmentService.findAllForStudent();
+            int semester = Integer.parseInt(safeTrim(sem));
+            List<AssignmentStudent> dtos = assignmentService.findAllForStudent(branch,semester);
+            if (dtos == null || dtos.isEmpty()) {
+                return ResponseEntity.ok(Collections.emptyList());
+            }
 
 
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(dtos);
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -4,6 +4,7 @@ import com.yash.EduSmart.Entity.AssignmentEntity;
 import com.yash.EduSmart.Entity.Branch;
 import com.yash.EduSmart.Entity.UserEntity;
 import com.yash.EduSmart.dto.AssignmentDTO;
+import com.yash.EduSmart.dto.AssignmentGetDTO;
 import com.yash.EduSmart.dto.AssignmentStudent;
 import com.yash.EduSmart.repository.AssignmentRepo;
 import com.yash.EduSmart.repository.BranchRepo;
@@ -57,8 +58,33 @@ public class AssignmentService {
         return assignmentRepo.findAll();
     }
 
-    public List<AssignmentStudent> findAllForStudent(){
-        return assignmentRepo.findAllForStudent();
+    public List<AssignmentStudent> findAllForStudent(String branch,int sem){
+        return assignmentRepo.findAllForStudent(branch,sem)
+                .stream().map(a->
+                        new AssignmentStudent(
+                                a.getId(),
+                                a.getBranch(),
+                                a.getSem(),
+                                a.getAssignment(),
+                                a.getDeadline()
+                        )).toList();
+    }
+
+    public List<AssignmentGetDTO> findByBranchAndSem(String branch,int sem){
+        return assignmentRepo.findAssignmentsWithCompletedUsers(branch, sem)
+                .stream()
+                .map(a -> new AssignmentGetDTO(
+                        a.getId(),
+                        a.getAssignment(),
+                        a.getDeadline(),
+                        a.getCompletedUsers()
+                                .stream()
+                                .map(UserEntity::getEnroll)
+                                .toList(),
+                        a.getBranch().getName(),
+                        String.valueOf(a.getBranch().getSemester())
+                ))
+                .toList();
     }
 
 

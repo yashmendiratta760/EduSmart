@@ -283,40 +283,18 @@ public class TeacherController {
         }
     }
 
-    @GetMapping("/getAllAssignments")
-    public ResponseEntity<List<AssignmentGetDTO>> getAll() {
+    @GetMapping("/getAllAssignmentsByBranchAndSem")
+    public ResponseEntity<List<AssignmentGetDTO>> getAll(
+            @RequestParam String branch,
+            @RequestParam String sem
+    ) {
         try {
-            List<AssignmentEntity> assignmentEntities = assignmentService.getAll();
-            if (assignmentEntities == null || assignmentEntities.isEmpty()) {
+            int semester = Integer.parseInt(safeTrim(sem));
+            List<AssignmentGetDTO> dtos = assignmentService.findByBranchAndSem(branch,semester);
+            if (dtos == null || dtos.isEmpty()) {
                 return ResponseEntity.ok(Collections.emptyList());
             }
 
-            List<AssignmentGetDTO> dtos = assignmentEntities.stream()
-                    .filter(Objects::nonNull)
-                    .map(it -> {
-                        Set<UserEntity> completedSet =
-                                Optional.ofNullable(it.getCompletedUsers())
-                                        .orElse(Collections.emptySet());
-
-                        List<String> enrolls = completedSet.stream()
-                                .filter(Objects::nonNull)
-                                .map(UserEntity::getEnroll)
-                                .filter(Objects::nonNull)
-                                .toList();
-
-                        String bName = it.getBranch() != null ? safeTrim(it.getBranch().getName()) : "";
-                        String sem = it.getBranch() != null ? String.valueOf(it.getBranch().getSemester()) : "";
-
-                        return new AssignmentGetDTO(
-                                it.getId(),
-                                safeTrim(it.getAssignment()),
-                                it.getDeadline(),
-                                enrolls,
-                                bName,
-                                sem
-                        );
-                    })
-                    .toList();
 
             return ResponseEntity.ok(dtos);
 
