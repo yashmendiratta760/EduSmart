@@ -31,6 +31,7 @@ public class AssignmentService {
         assignment.setAssignment(assignmentDTO.getAssignment());
         assignment.setDeadline(assignmentDTO.getDeadline());
         assignment.setBranch(branch);
+        assignment.setPathOfFile(assignmentDTO.getPath());
 
         AssignmentEntity s = assignmentRepo.save(assignment);
         return s.getId();
@@ -66,7 +67,8 @@ public class AssignmentService {
                                 a.getBranch(),
                                 a.getSem(),
                                 a.getAssignment(),
-                                a.getDeadline()
+                                a.getDeadline(),
+                                a.getPath()
                         )).toList();
     }
 
@@ -82,7 +84,8 @@ public class AssignmentService {
                                 .map(UserEntity::getEnroll)
                                 .toList(),
                         a.getBranch().getName(),
-                        String.valueOf(a.getBranch().getSemester())
+                        String.valueOf(a.getBranch().getSemester()),
+                        a.getPathOfFile()
                 ))
                 .toList();
     }

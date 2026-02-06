@@ -153,7 +153,8 @@ public class ChatController
                     task,
                     assignment.getDeadline(),
                     branch,
-                    semester
+                    semester,
+                    assignment.getPath()
             ));
 
             if (id == null) return null;

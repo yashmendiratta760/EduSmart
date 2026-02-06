@@ -13,4 +13,5 @@ public class AssignmentDTO {
     Long deadline;
     String branch;
     String semester;
+    String path;
 }

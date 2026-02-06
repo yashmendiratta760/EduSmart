@@ -1,16 +1,23 @@
 package com.yash.EduSmart.controllers;
 
 import com.yash.EduSmart.Entity.*;
+import com.yash.EduSmart.config.SupabaseStorageClient;
 import com.yash.EduSmart.dto.*;
 import com.yash.EduSmart.service.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/teacher")
 public class TeacherController {
@@ -32,6 +39,15 @@ public class TeacherController {
 
     @Autowired
     private AssignmentService assignmentService;
+
+    @Value("${SUPABASE_URL}")
+    private String baseUrl;
+
+    private final SupabaseStorageClient storageClient;
+
+    public TeacherController(SupabaseStorageClient storageClient) {
+        this.storageClient = storageClient;
+    }
 
 //    @PostMapping("/time-table-upload")
 //    public ResponseEntity<String> timeTableEntry(@RequestBody(required = false) TimeTableDTO timeTableDTO) {
@@ -377,6 +393,62 @@ public class TeacherController {
         } catch (Exception e){
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
+    }
+
+
+    @PostMapping("/presign-upload")
+    public ResponseEntity<PresignUploadResponse> presignUpload(
+            @RequestBody PresignUploadRequest request,
+            Principal principal
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // build safe path
+        String user = principal.getName(); // email or username
+        String safeFileName = request.getFileName().replaceAll("[^a-zA-Z0-9._-]", "_");
+        String path = user + "/" + UUID.randomUUID() + "_" + safeFileName;
+
+        Map<String, Object> supabaseResponse =
+                storageClient.createSignedUrl(path);
+        String url = (String) supabaseResponse.get("url");
+        if (url == null) {
+            throw new RuntimeException("Supabase did not return url: " + supabaseResponse);
+        }
+
+        return ResponseEntity.ok(new PresignUploadResponse(path, url));
+
+
+
+    }
+
+    // Android calls this when it wants to download
+    @PostMapping("/presign-download")
+    public ResponseEntity<PresignDownloadResponse> presignDownload(
+            @RequestBody PresignDownloadRequest request,
+            Principal principal
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String path = request.getPath();
+        if (path == null || path.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        path = URLDecoder.decode(path, StandardCharsets.UTF_8);
+        Map<String, Object> supabaseResponse =
+                storageClient.createSignedDownloadUrl(path);
+        String url = (String) supabaseResponse.get("signedURL");
+
+        if (url == null) {
+            throw new RuntimeException("Supabase did not return url: " + supabaseResponse);
+        }
+        log.error("URL {}",url);
+
+        String fullurl = baseUrl+"/storage/v1"+url;
+        log.error("URL {}",fullurl);
+        return ResponseEntity.ok(new PresignDownloadResponse(fullurl));
     }
 
 

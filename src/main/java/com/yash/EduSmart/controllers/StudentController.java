@@ -4,15 +4,20 @@ import com.yash.EduSmart.Entity.ChatEntity;
 import com.yash.EduSmart.Entity.HolidayEntity;
 import com.yash.EduSmart.Entity.TimeTableEntry;
 import com.yash.EduSmart.Entity.UserEntity;
+import com.yash.EduSmart.config.SupabaseStorageClient;
 import com.yash.EduSmart.dto.*;
 import com.yash.EduSmart.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.*;
 
 @Slf4j
@@ -40,6 +45,16 @@ public class StudentController {
 
     @Autowired
     private ChatService chatService;
+
+    @Value("${SUPABASE_URL}")
+    private String baseUrl;
+
+    private final SupabaseStorageClient storageClient;
+
+    public StudentController(SupabaseStorageClient storageClient) {
+        this.storageClient = storageClient;
+    }
+
 
     @GetMapping("/getTimeTableByDay")
     public ResponseEntity<List<TimeTableDTO>> getTimeTableByDays(
@@ -296,6 +311,32 @@ public class StudentController {
         }
     }
 
+    @PostMapping("/presign-download")
+    public ResponseEntity<PresignDownloadResponse> presignDownload(
+            @RequestBody PresignDownloadRequest request,
+            Principal principal
+    ) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String path = request.getPath();
+        if (path == null || path.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        path = URLDecoder.decode(path, StandardCharsets.UTF_8);
+        Map<String, Object> supabaseResponse =
+                storageClient.createSignedDownloadUrl(path);
+        String url = (String) supabaseResponse.get("signedURL");
+
+        if (url == null) {
+            throw new RuntimeException("Supabase did not return url: " + supabaseResponse);
+        }
+        log.error("URL {}",url);
+
+        String fullurl = baseUrl+"/storage/v1"+url;
+        log.error("URL {}",fullurl);
+        return ResponseEntity.ok(new PresignDownloadResponse(fullurl));
+    }
 
 
     private static String safeTrim(String s) {

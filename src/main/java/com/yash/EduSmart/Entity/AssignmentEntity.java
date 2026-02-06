@@ -24,6 +24,8 @@ public class AssignmentEntity
 
     private Long deadline;
 
+    private String pathOfFile;
+
     @ManyToMany
     @JoinTable(
             name = "assignment_completed_users",

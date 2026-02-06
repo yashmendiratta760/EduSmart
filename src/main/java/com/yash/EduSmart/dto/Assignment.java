@@ -13,5 +13,6 @@ public class Assignment
     String sender;
     String receiver;
     String task;
+    String path;
     Long deadline;
 }

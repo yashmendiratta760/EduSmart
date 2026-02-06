@@ -38,3 +38,10 @@ spring:
 google:
   client_id: ${CLIENT_ID}
 
+
+supabase:
+  url: ${SUPABASE_URL}
+  serviceKey: ${SUPABASE_SERVICE_KEY}
+  bucket: "attachments"
+
+

@@ -17,4 +17,5 @@ public class AssignmentGetDTO
     List<String> enroll;
     String branch;
     String sem;
+    String path;
 }

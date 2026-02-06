@@ -15,4 +15,5 @@ public class AssignmentStudent {
     String sem;
     String assignment;
     Long deadline;
+    String path;
 }

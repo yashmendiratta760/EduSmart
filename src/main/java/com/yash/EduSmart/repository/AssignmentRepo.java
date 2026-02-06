@@ -18,7 +18,8 @@ select new com.yash.EduSmart.dto.AssignmentStudent(
     b.name,
     concat('', b.semester),
     a.assignment,
-    a.deadline
+    a.deadline,
+    a.pathOfFile
 )
 from AssignmentEntity a
 join a.branch b
