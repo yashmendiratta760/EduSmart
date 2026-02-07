@@ -25,7 +25,18 @@ public interface TimeTableRepo extends JpaRepository<TimeTableEntry, Long> {
 
     TimeTableEntry findByDayAndSubjectAndBranchAndTiming(String day, String subject, Branch branch, String time);
 
-    List<TimeTableEntry> findByTeacherId(Long id);
+    @Query("""
+select new com.yash.EduSmart.dto.TimeTableDTO(
+  t.day, t.subject, t.timing,
+  concat(b.name, ' ', b.semester)
+)
+from TimeTableEntry t
+join t.branch b
+join t.teacher te
+where te.id = :teacherId
+""")
+    List<TimeTableDTO> getTeacherTimeTable(@Param("teacherId") Long teacherId);
+
 
     List<TimeTableEntry> findByBranch(Branch branch);
 

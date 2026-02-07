@@ -320,6 +320,11 @@ public class TeacherController {
     @GetMapping("/getMyTImeTable")
     public ResponseEntity<List<TimeTableDTO>> getTimeTable(Principal principal) {
         try {
+            if (principal == null || principal.getName() == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Collections.emptyList());
+            }
+
             String em = safeTrim(principal.getName());
             if (em.isEmpty()) {
                 return ResponseEntity.badRequest().body(Collections.emptyList());
@@ -330,23 +335,7 @@ public class TeacherController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
             }
 
-            List<TimeTableEntry> entries = timeTableService.findByTeacherId(user.getId());
-            if (entries == null || entries.isEmpty()) {
-                return ResponseEntity.ok(Collections.emptyList());
-            }
-
-            List<TimeTableDTO> timetable = entries.stream()
-                    .filter(Objects::nonNull)
-                    .map(it -> new TimeTableDTO(
-                            safeTrim(it.getDay()),
-                            safeTrim(it.getSubject()),
-                            safeTrim(it.getTiming()),
-                            (it.getBranch() != null)
-                                    ? (safeTrim(it.getBranch().getName()) + " " + it.getBranch().getSemester())
-                                    : ""
-                    ))
-                    .toList();
-
+            List<TimeTableDTO> timetable = timeTableService.findByTeacherId(user.getId());
             return ResponseEntity.ok(timetable);
 
         } catch (Exception e) {

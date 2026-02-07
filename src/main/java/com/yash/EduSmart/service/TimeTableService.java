@@ -23,8 +23,8 @@ public class TimeTableService {
     @Autowired
     private BranchRepo branchRepo;
 
-    public List<TimeTableEntry> findByTeacherId(Long id){
-        return timeTableRepo.findByTeacherId(id);
+    public List<TimeTableDTO> findByTeacherId(Long id){
+        return timeTableRepo.getTeacherTimeTable(id);
     }
 
 
