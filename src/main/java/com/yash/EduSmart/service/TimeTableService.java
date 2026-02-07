@@ -27,18 +27,6 @@ public class TimeTableService {
         return timeTableRepo.findByTeacherId(id);
     }
 
-    public void createEntry(TimeTableDTO timeTableDTO) {
-        TimeTableEntry timeTableEntry = new TimeTableEntry();
-        timeTableEntry.setDay(timeTableDTO.getDay());
-        timeTableEntry.setSubject(timeTableDTO.getSubject());
-        timeTableEntry.setTiming(timeTableDTO.getTime());
-
-        Branch branch = branchRepo.findByName(timeTableDTO.getBranch());
-
-        timeTableEntry.setBranch(branch);
-
-        timeTableRepo.save(timeTableEntry);
-    }
 
     public List<TimeTableDTO> getEntryByBranchAndSemester(String branch, int semester) {
         List<TimeTableDTO> timeTableEntries = timeTableRepo.findByBranchAndSemester(branch,semester);
@@ -50,9 +38,8 @@ public class TimeTableService {
     }
 
     public List<String> getAllSubjects(String branch, int semester) {
-        List<String> subjects = getEntryByBranchAndSemester(branch, semester).stream().map(it ->
-                it.getSubject()).toList();
-        return subjects;
+        return timeTableRepo.findDistinctSubjects(branch, semester);
+
     }
 
     public List<TeacherDTO> findTeachersByBranchAndSemDto(String branch, String sem) {

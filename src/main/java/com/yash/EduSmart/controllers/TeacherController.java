@@ -242,8 +242,7 @@ public class TeacherController {
                 return ResponseEntity.ok(Collections.emptyList());
             }
 
-            List<TimeTableDTO> dtos = new ArrayList<>();
-            return ResponseEntity.ok(dtos);
+            return ResponseEntity.ok(entries);
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
@@ -271,15 +270,8 @@ public class TeacherController {
                 return ResponseEntity.badRequest().body(Collections.emptyList());
             }
 
-            List<UserEntity> studentsData = userService.findStudentsByBranch(branch, sem);
-            if (studentsData == null || studentsData.isEmpty()) {
-                return ResponseEntity.badRequest().body(Collections.emptyList());
-            }
 
-            List<StudentData> studentEmails = studentsData.stream()
-                    .filter(Objects::nonNull)
-                    .map(it -> new StudentData(safeTrim(it.getEmail()), safeTrim(it.getName())))
-                    .toList();
+            List<StudentData> studentEmails = userService.findStudentsByBranch(branch,sem);
 
             return ResponseEntity.ok(studentEmails);
 
@@ -319,16 +311,16 @@ public class TeacherController {
         }
     }
 
-    @PutMapping("/deleteAssignment")
+    @DeleteMapping("/deleteAssignment")
     public ResponseEntity<String> deleteAssignment(@RequestParam Long id){
         assignmentService.deleteEntry(id);
         return ResponseEntity.ok("DELETED");
     }
 
     @GetMapping("/getMyTImeTable")
-    public ResponseEntity<List<TimeTableDTO>> getTimeTable(@RequestParam(required = false) String email) {
+    public ResponseEntity<List<TimeTableDTO>> getTimeTable(Principal principal) {
         try {
-            String em = safeTrim(email);
+            String em = safeTrim(principal.getName());
             if (em.isEmpty()) {
                 return ResponseEntity.badRequest().body(Collections.emptyList());
             }

@@ -2,6 +2,7 @@ package com.yash.EduSmart.service;
 
 import com.yash.EduSmart.Entity.Branch;
 import com.yash.EduSmart.Entity.UserEntity;
+import com.yash.EduSmart.dto.StudentData;
 import com.yash.EduSmart.dto.UserDTO;
 import com.yash.EduSmart.repository.BranchRepo;
 import com.yash.EduSmart.repository.UserRepository;
@@ -48,12 +49,8 @@ public class UserService {
         }
     }
 
-    public List<UserEntity> findStudentsByBranch(String branch, int semester) {
-        Branch branchOfUser = branchRepo.findByNameAndSemester(branch, semester);
-
-        if (branchOfUser != null) {
-            List<UserEntity> studentList = userRepo.findByBranch(branchOfUser);
-            return studentList;
-        } else return new ArrayList<>();
+    public List<StudentData> findStudentsByBranch(String branch, int semester) {
+        return userRepo.findStudentDataByBranchAndSemester(branch, semester);
     }
+
 }

@@ -3,6 +3,7 @@ package com.yash.EduSmart.repository;
 import com.yash.EduSmart.Entity.Attendance;
 import com.yash.EduSmart.Entity.TimeTableEntry;
 import com.yash.EduSmart.Entity.UserEntity;
+import com.yash.EduSmart.dto.AttendanceDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,6 +27,17 @@ public interface AttendanceRepo extends JpaRepository<Attendance, Long> {
             @Param("date") LocalDate date,
             @Param("emails") List<String> emails
     );
+
+
+    @Query("""
+    select new com.yash.EduSmart.dto.AttendanceDTO(a.date, a.status, t.subject)
+    from Attendance a
+    join a.timeTable t
+    where a.student.id = :userId
+    order by a.date desc
+""")
+    List<AttendanceDTO> findAttendanceDtoByStudentId(@Param("userId") Long userId);
+
 
 
 }

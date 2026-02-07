@@ -38,5 +38,9 @@ public interface TimeTableRepo extends JpaRepository<TimeTableEntry, Long> {
     List<TeacherDTO> findTeacherDtos(@Param("branch") String branch,
                                      @Param("sem") int sem);
 
+    @Query("select distinct t.subject from TimeTableEntry t where t.branch.name=:branch and t.branch.semester=:sem")
+    List<String> findDistinctSubjects(String branch, int sem);
+
+
 
 }

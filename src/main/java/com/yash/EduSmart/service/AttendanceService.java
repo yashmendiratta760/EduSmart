@@ -19,14 +19,9 @@ public class AttendanceService {
     private AttendanceRepo attendanceRepo;
 
     public List<AttendanceDTO> getAttendance(Long userId) {
-        List<Attendance> userAttendance = attendanceRepo.findByStudent_Id(userId);
-
-        List<AttendanceDTO> attendanceDTO = new ArrayList<>();
-        userAttendance.forEach(attendance -> {
-            attendanceDTO.add(new AttendanceDTO(attendance.getDate(), attendance.getStatus(), attendance.getTimeTable().getSubject()));
-        });
-        return attendanceDTO;
+        return attendanceRepo.findAttendanceDtoByStudentId(userId);
     }
+
 
     public Attendance findEntry(UserEntity student, TimeTableEntry timeTable, LocalDate date) {
         Attendance entity = attendanceRepo.findByStudentAndTimeTableAndDate(student, timeTable, date);

@@ -42,7 +42,6 @@ public class WebSocketJwtInterceptor implements ChannelInterceptor
                 String jwt = authHeader.substring(7);
                 String email = jwtUtils.extractEmail(jwt);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                log.error(userDetails.getUsername());
 
                 if (jwtUtils.validateToken(jwt)){
                     String userType = jwtUtils.extractUserType(jwt).toUpperCase();
@@ -58,7 +57,6 @@ public class WebSocketJwtInterceptor implements ChannelInterceptor
                 }
             }
         }
-        log.error(message.toString());
         return message;
     }
 }

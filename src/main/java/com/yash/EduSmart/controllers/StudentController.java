@@ -113,18 +113,9 @@ public class StudentController {
                 return ResponseEntity.badRequest().body(Collections.emptyList());
             }
 
-            List<UserEntity> students = userService.findStudentsByBranch(branch, sem);
-            if (students == null || students.isEmpty()) {
-                return ResponseEntity.badRequest().body(Collections.emptyList());
-            }
 
-            List<StudentData> result = students.stream()
-                    .filter(Objects::nonNull)
-                    .map(u -> new StudentData(
-                            safeTrim(u.getEmail()),
-                            safeTrim(u.getName())
-                    ))
-                    .toList();
+
+            List<StudentData> result = userService.findStudentsByBranch(branch,sem);
 
             return ResponseEntity.ok(result);
 
