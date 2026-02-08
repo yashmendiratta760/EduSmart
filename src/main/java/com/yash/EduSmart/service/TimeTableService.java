@@ -67,6 +67,7 @@ public class TimeTableService {
                     entry.setTiming(dto.getStartTime()+"-"+dto.getEndTime());
                     entry.setBranch(branch);   // or fetch from repo if needed
                     entry.setTeacher(user); // same here
+                    entry.setRoom(dto.getRoomNo());
                     return entry;
                 })
                 .toList();
