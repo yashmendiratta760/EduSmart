@@ -19,11 +19,11 @@ public class BranchService {
         return null;
     }
 
-    public void createBranch(String name) {
+    public void createBranch(String name,String sem) {
         Branch branch = new Branch();
         branch.setName(name);
+        branch.setSemester(Integer.parseInt(sem));
         branchRepo.save(branch);
-
     }
 
     public Branch getByNameAndSemester(String name, int sem) {
@@ -33,7 +33,8 @@ public class BranchService {
     public List<String> getAllBranch(){
         return branchRepo.findAll().stream().map(
                 branch -> branch.getName()
-        ).toList();
+        )
+                .distinct().toList();
     }
 
 }

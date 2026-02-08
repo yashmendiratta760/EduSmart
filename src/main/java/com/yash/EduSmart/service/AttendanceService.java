@@ -50,4 +50,8 @@ public class AttendanceService {
     public void saveAll(List<Attendance> attendances){
         attendanceRepo.saveAll(attendances);
     }
+
+    public void deleteAll(){
+        attendanceRepo.deleteAll();
+    }
 }

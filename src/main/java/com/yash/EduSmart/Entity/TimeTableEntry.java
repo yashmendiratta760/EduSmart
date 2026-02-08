@@ -18,6 +18,8 @@ public class TimeTableEntry {
     private String subject;
     private String timing;
 
+    private String room="400";
+
     @ManyToOne
     @JoinColumn(name = "branch_id")
     @JsonBackReference

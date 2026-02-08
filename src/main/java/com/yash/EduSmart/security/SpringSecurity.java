@@ -23,10 +23,11 @@ public class SpringSecurity {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> auth
-//                .requestMatchers("/users/**", "/teacher/**", "/student/**","/ws/**").permitAll()
+//                .requestMatchers("/users/**", "/teacher/**", "/student/**","/ws/**","/admin/**").permitAll()
                 .requestMatchers("/users/**","/ws/**").permitAll()
                 .requestMatchers("/student/**").hasAnyRole("STUDENT")
                 .requestMatchers("/teacher/**").hasAnyRole("TEACHER")
+                .requestMatchers("/admin/**").hasRole("ADMIN")
 
                 .anyRequest().authenticated());
 

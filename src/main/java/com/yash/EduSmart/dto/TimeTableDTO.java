@@ -12,4 +12,5 @@ public class TimeTableDTO {
     String subject;
     String time;
     String branch;
+    String room;
 }

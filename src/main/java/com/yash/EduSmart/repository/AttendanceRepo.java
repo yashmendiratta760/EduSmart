@@ -5,6 +5,7 @@ import com.yash.EduSmart.Entity.TimeTableEntry;
 import com.yash.EduSmart.Entity.UserEntity;
 import com.yash.EduSmart.dto.AttendanceDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -37,6 +38,10 @@ public interface AttendanceRepo extends JpaRepository<Attendance, Long> {
     order by a.date desc
 """)
     List<AttendanceDTO> findAttendanceDtoByStudentId(@Param("userId") Long userId);
+
+    @Modifying
+    @Query(value = "TRUNCATE TABLE attendance RESTART IDENTITY CASCADE", nativeQuery = true)
+    void truncateAttendance();
 
 
 
