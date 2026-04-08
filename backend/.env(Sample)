@@ -1,0 +1,10 @@
+MAIL_USERNAME="email@example.com"
+MAIL_PASSWORD="email password"
+SECRET_KEY="32-bit key"
+CLIENT_ID="google client id"
+
+DB_URL="psql url"
+DB_USER="db username"
+DB_PASS="db password"
+SUPABASE_URL="subabase url
+SUPABASE_SERVICE_KEY="supabase key"
