@@ -1,0 +1,47 @@
+server:
+  port: ${PORT:8080}
+  address: 0.0.0.0
+
+secret:
+  key: ${SECRET_KEY}
+
+
+spring:
+  application:
+    name: Resource Management
+
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASS}
+
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+
+google:
+  client_id: ${CLIENT_ID}
+
+
+supabase:
+  url: ${SUPABASE_URL}
+  serviceKey: ${SUPABASE_SERVICE_KEY}
+  bucket: "attachments"
+
+
