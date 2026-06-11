@@ -1,5 +1,6 @@
 package com.yash.EduSmart.service;
 
+import com.yash.EduSmart.dto.AI.ChatRequest;
 import com.yash.EduSmart.dto.AI.GeneralRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,6 +39,55 @@ public class AIService {
 
         return response.getBody();
     }
+
+
+    public String uploadDocument(String fileUrl, String jwtToken) {
+
+        String apiUrl = AI_API_URL+ "upload";
+
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(jwtToken);
+
+        HttpEntity<String> request =
+                new HttpEntity<>(fileUrl, headers);
+
+        ResponseEntity<String> response =
+                restTemplate.exchange(
+                        apiUrl,
+                        HttpMethod.POST,
+                        request,
+                        String.class
+                );
+
+        return response.getBody();
+    }
+
+    public String rag(ChatRequest request, String jwtToken) {
+
+        String apiUrl = AI_API_URL+ "rag";
+
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(jwtToken);
+
+        HttpEntity<ChatRequest> request2 =
+                new HttpEntity<>(request, headers);
+
+        ResponseEntity<String> response =
+                restTemplate.exchange(
+                        apiUrl,
+                        HttpMethod.POST,
+                        request2,
+                        String.class
+                );
+
+        return response.getBody();
+    }
+
+
 }
 
 
