@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
@@ -12,6 +13,6 @@ import java.util.List;
 @AllArgsConstructor
 public class GeneralRequest{
     String user_query;
-    String current_date;
+    String current_date = LocalDate.now().toString();
     List<String> history= Collections.emptyList();
 }

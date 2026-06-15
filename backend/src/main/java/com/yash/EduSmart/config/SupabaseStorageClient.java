@@ -16,12 +16,14 @@ public class SupabaseStorageClient
     @Value("${supabase.bucket}")
     private String bucket;
 
+    private final String serviceKey;
+
     public SupabaseStorageClient(
             @Value("${SUPABASE_URL}") String supabaseUrl,
             @Value("${SUPABASE_SERVICE_KEY}") String serviceKey)
     {
-        System.out.println("SUPABASE key prefix = " + serviceKey.substring(0, 20));
 
+        this.serviceKey = serviceKey;
         this.webClient = WebClient.builder()
                 .baseUrl(supabaseUrl)
                 .defaultHeader("apikey",serviceKey)
