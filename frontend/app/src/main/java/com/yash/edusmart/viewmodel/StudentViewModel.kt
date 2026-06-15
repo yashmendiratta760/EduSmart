@@ -1,12 +1,17 @@
 package com.yash.edusmart.viewmodel
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yash.edusmart.api.AttendanceDTO
+import com.yash.edusmart.api.ChatRequest
+import com.yash.edusmart.api.GeneralRequest
 import com.yash.edusmart.api.PresignDownloadRequest
 import com.yash.edusmart.api.PresignDownloadResponse
+import com.yash.edusmart.api.PresignUploadRequest
+import com.yash.edusmart.api.PresignUploadResponse
 import com.yash.edusmart.api.StudentsListDTO
 import com.yash.edusmart.db.Assignments
 import com.yash.edusmart.db.TimeTableDTO
@@ -387,6 +392,59 @@ class StudentViewModel @Inject constructor(private val contextRepo: ContextRepo,
             )
         }
     }
+
+
+
+
+    suspend fun presignUploadSuspend(request: PresignUploadRequest): PresignUploadResponse {
+        Log.d("HIT","JIT")
+        val res = studentApiRepo.presignUpload(request)
+        Log.d("PRESIGN", "code=${res.code()} ok=${res.isSuccessful} body=${res.body()} err=${res.errorBody()?.string()}")
+
+
+        if (!res.isSuccessful) {
+            val err = res.errorBody()?.string()
+            throw RuntimeException("presignUpload failed: ${res.code()} ${res.message()} body=$err")
+        }
+
+        return res.body()
+            ?: throw RuntimeException("presignUpload success but body is null (converter/model mismatch?)")
+    }
+
+    suspend fun createVector(file_url: String){
+        val res = studentApiRepo.createVector(file_url)
+
+        Log.d("VECTOR", res.body()?.toString() ?: "null")
+    }
+
+    fun rag(query: String){
+        viewModelScope.launch {
+            val res = studentApiRepo.rag(request = ChatRequest(query = query))
+            _uiState.update { it ->
+                it.copy(aiResponse = res.body() ?: "some error occurred")
+            }
+        }
+    }
+
+    fun general(query: String){
+        viewModelScope.launch {
+            val res = studentApiRepo.generalChat(request = GeneralRequest(user_query = query))
+            _uiState.update { it ->
+                it.copy(aiResponse = res.body() ?: "some error occurred")
+            }
+        }
+    }
+
+    fun suggestions(query: String){
+        viewModelScope.launch {
+            val res = studentApiRepo.plannerS(query=query)
+            _uiState.update { it ->
+                it.copy(aiResponse = res.body() ?: "some error occurred")
+            }
+        }
+    }
+
+
 
 
 

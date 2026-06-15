@@ -1,5 +1,7 @@
 package com.yash.edusmart.api
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.yash.edusmart.data.TimeTableEntry
 import retrofit2.Response
 import retrofit2.http.Body
@@ -7,6 +9,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Query
+import java.time.LocalDate
 
 interface StudentApi
 {
@@ -75,12 +78,52 @@ interface StudentApi
         @Body request: PresignDownloadRequest
     ): Response<PresignDownloadResponse>
 
+    @POST("/AI/upload-doc")
+    suspend fun presignUpload(
+        @Body req : PresignUploadRequest
+    ): Response<PresignUploadResponse>
+
+    @POST("/AI/create-vector")
+    suspend fun createVector(
+        @Body file_url: String
+    ): Response<Unit>
+
+    @POST("/AI/chat-general")
+    suspend fun generalChat(
+        @Body request:GeneralRequest
+    ): Response<String>
+
+    @POST("/AI/rag")
+    suspend fun rag(
+        @Body request: ChatRequest
+    ): Response<String>
+
+    @POST("/AI/plan")
+    suspend fun plannerS(
+        @Body query: String
+    ): Response<String>
+
+
 
 
 
 
 
 }
+
+
+data class ChatRequest(
+    val query: String,
+    val history:List<String> = emptyList()
+)
+
+data class GeneralRequest @RequiresApi(Build.VERSION_CODES.O) constructor(
+    val user_query: String,
+    val current_date: String= LocalDate.now().toString(),
+    val history:List<String> = emptyList()
+)
+
+
 data class TeacherDTO(
     val name: String,
     val email: String

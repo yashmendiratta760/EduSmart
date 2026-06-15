@@ -19,5 +19,6 @@ data class StudentUiState(
     val isLoading: Boolean = false,
     val isChatListLoading: Boolean=false,
     var studentDataChat:List<StudentData> = emptyList(),
-    val subjectList:List<String> = emptyList()
+    val subjectList:List<String> = emptyList(),
+    val aiResponse:String = ""
 )

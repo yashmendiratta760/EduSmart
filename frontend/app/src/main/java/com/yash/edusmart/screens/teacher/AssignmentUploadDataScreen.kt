@@ -263,7 +263,7 @@ fun AssignmentUploadDataScreen(
                                 )
 
                                 // 2) upload bytes to signed URL (UI has context/uri)
-                                val supabaseBaseUrl = "https://ukaftdwlcwjbustjuczm.supabase.co/storage/v1"
+                                val supabaseBaseUrl = "https://bjjiztebvvgdfjbmsgsz.supabase.co/storage/v1"
 
                                 uploadToSignedUrl(
                                     context = context,

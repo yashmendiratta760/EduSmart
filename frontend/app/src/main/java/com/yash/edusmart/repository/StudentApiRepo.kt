@@ -3,9 +3,13 @@ package com.yash.edusmart.repository
 import com.yash.edusmart.api.AssignmentStudent
 import com.yash.edusmart.api.AttendanceDTO
 import com.yash.edusmart.api.ChatEntity
+import com.yash.edusmart.api.ChatRequest
+import com.yash.edusmart.api.GeneralRequest
 import com.yash.edusmart.api.HolidayEntity
 import com.yash.edusmart.api.PresignDownloadRequest
 import com.yash.edusmart.api.PresignDownloadResponse
+import com.yash.edusmart.api.PresignUploadRequest
+import com.yash.edusmart.api.PresignUploadResponse
 import com.yash.edusmart.api.StudentApi
 import com.yash.edusmart.api.StudentData
 import com.yash.edusmart.api.StudentsListDTO
@@ -76,6 +80,28 @@ interface StudentApiRepo
     suspend fun preSignDownload(
         @Body request: PresignDownloadRequest
     ): Response<PresignDownloadResponse>
+
+
+    suspend fun presignUpload(
+        @Body req : PresignUploadRequest
+    ): Response<PresignUploadResponse>
+
+    suspend fun createVector(
+        @Body file_url: String
+    ): Response<Unit>
+
+
+    suspend fun generalChat(
+        @Body request: GeneralRequest
+    ): Response<String>
+
+    suspend fun rag(
+        @Body request: ChatRequest
+    ): Response<String>
+
+    suspend fun plannerS(
+        @Body query: String
+    ): Response<String>
 }
 
 class StudentApiRepoImpl @Inject constructor(private val studentApi: StudentApi): StudentApiRepo
@@ -152,6 +178,26 @@ class StudentApiRepoImpl @Inject constructor(private val studentApi: StudentApi)
 
     override suspend fun preSignDownload(request: PresignDownloadRequest): Response<PresignDownloadResponse> {
         return studentApi.preSignDownload(request)
+    }
+
+    override suspend fun presignUpload(req: PresignUploadRequest): Response<PresignUploadResponse> {
+        return studentApi.presignUpload(req)
+    }
+
+    override suspend fun createVector(file_url: String): Response<Unit> {
+        return studentApi.createVector(file_url)
+    }
+
+    override suspend fun generalChat(request: GeneralRequest): Response<String> {
+        return studentApi.generalChat(request)
+    }
+
+    override suspend fun rag(request: ChatRequest): Response<String> {
+        return studentApi.rag(request)
+    }
+
+    override suspend fun plannerS(query: String): Response<String> {
+        return studentApi.plannerS(query)
     }
 }
 

@@ -19,6 +19,8 @@ navigationCompose = "2.9.3"
 retrofit = "3.0.0"
 converterScalars = "3.0.0"
 playServicesAuth = "21.3.0"
+richtextCommonmark = "0.20.0"
+richtextUiMaterial3 = "0.20.0"
 roomRuntime = "2.8.0"
 
 
@@ -53,6 +55,8 @@ krossbow-websocket-okhttp = { module = "org.hildan.krossbow:krossbow-websocket-o
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 converter-scalars = { module = "com.squareup.retrofit2:converter-scalars", version.ref = "converterScalars" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+richtext-commonmark = { module = "com.halilibo.compose-richtext:richtext-commonmark", version.ref = "richtextCommonmark" }
+richtext-ui-material3 = { module = "com.halilibo.compose-richtext:richtext-ui-material3", version.ref = "richtextUiMaterial3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

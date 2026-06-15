@@ -60,6 +60,9 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    implementation(libs.richtext.ui.material3)
+    implementation(libs.richtext.commonmark)
+
     //stomp
     implementation(libs.krossbow.stomp.core)
     implementation(libs.krossbow.websocket.okhttp)

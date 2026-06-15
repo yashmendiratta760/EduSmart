@@ -16,6 +16,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.PlaylistAddCheckCircle
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -36,11 +37,13 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.yash.edusmart.navigation.Screens
 import com.yash.edusmart.screens.component.CustomBottomNavigationBar
 import com.yash.edusmart.screens.component.CustomTopBar
 import com.yash.edusmart.screens.student.AttendanceView
 import com.yash.edusmart.screens.student.ChatScreen
 import com.yash.edusmart.screens.student.HomeScreen
+import com.yash.edusmart.screens.student.UploadFile
 import com.yash.edusmart.screens.teacher.AssignmentScreen
 import com.yash.edusmart.viewmodel.ChatUiState
 import com.yash.edusmart.viewmodel.ChatViewModel
@@ -135,6 +138,15 @@ fun MainLogic(navController: NavHostController,
     var chatBackPressed by remember { mutableStateOf(false) }
 
     Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    navController.navigate(Screens.AI_SCREEN.name)
+                }
+            ) {
+                Text("AI")
+            }
+        },
         modifier = when(selectedIndex) {
             1-> Modifier.nestedScroll(scrollBehaviorAttendance.nestedScrollConnection)
             4-> Modifier.nestedScroll(scrollBehaviorSettings.nestedScrollConnection)
@@ -258,7 +270,11 @@ fun MainLogic(navController: NavHostController,
                 loginSignupViewModel = loginSignupViewModel,
                 navController = navController,
                 userUiState = userUiState)
+
+
         }
+
+
 
 
     }

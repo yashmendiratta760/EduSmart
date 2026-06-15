@@ -44,7 +44,7 @@ fun getUrl(): String {
     return if (isEmulator()) {
         "http://10.0.2.2:8080/"
     } else {
-        "http://192.168.0.103:8080/"
+        "http://192.168.0.104:8080/"
 
     }
 }
@@ -70,8 +70,8 @@ class NetworkModule {
     fun providesRetrofit(okHttpClient: OkHttpClient):Retrofit
     {
         return Retrofit.Builder()
-            .baseUrl("https://edusmartbackend-z95q.onrender.com/")
-//            .baseUrl(getUrl())
+//            .baseUrl("https://edusmartbackend-z95q.onrender.com/")
+            .baseUrl(getUrl())
             .client(okHttpClient)
             .addConverterFactory(ScalarsConverterFactory.create())
             .addConverterFactory(GsonConverterFactory.create())

@@ -7,5 +7,10 @@ enum class Screens
     Student,
     Teacher,
     Attendance_Update,
-    Assignment_DATA
+    Assignment_DATA,
+
+    AI_SCREEN,
+    RAG,
+    GENERAL,
+    SUGGESTIONS
 }

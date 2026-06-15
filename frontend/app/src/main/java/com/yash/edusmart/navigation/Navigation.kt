@@ -13,6 +13,10 @@ import androidx.navigation.compose.rememberNavController
 import com.yash.edusmart.login_signup.screens.Login
 import com.yash.edusmart.screens.LoadingScreen
 import com.yash.edusmart.screens.MainLogic
+import com.yash.edusmart.screens.student.AIScreen
+import com.yash.edusmart.screens.student.GeneralChat
+import com.yash.edusmart.screens.student.Suggestions
+import com.yash.edusmart.screens.student.UploadFile
 import com.yash.edusmart.screens.teacher.AssignmentUploadDataScreen
 import com.yash.edusmart.screens.teacher.AttendanceUpdate
 import com.yash.edusmart.screens.teacher.TeacherMainLogic
@@ -92,6 +96,25 @@ fun Navigation(navController: NavHostController = rememberNavController(),
                 navController=navController
             )
         }
+
+        composable(route = Screens.RAG.name) {
+            UploadFile(studentViewModel = studentViewModel,
+                studentUiState=studentUiState)
+        }
+
+        composable(route= Screens.AI_SCREEN.name) {
+            AIScreen(navController=navController)
+        }
+
+        composable(route= Screens.GENERAL.name) {
+            GeneralChat(studentViewModel=studentViewModel,
+                studentUiState = studentUiState)
+        }
+        composable(route= Screens.SUGGESTIONS.name) {
+            Suggestions(studentViewModel=studentViewModel,
+                studentUiState = studentUiState)
+        }
+
 
     }
 }
