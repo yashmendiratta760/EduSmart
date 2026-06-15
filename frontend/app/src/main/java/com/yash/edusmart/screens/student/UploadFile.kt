@@ -1,7 +1,6 @@
 package com.yash.edusmart.screens.student
 
 import android.os.Build
-import android.widget.Button
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,20 +12,22 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Attachment
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.Button
-
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.halilibo.richtext.markdown.Markdown
 import com.halilibo.richtext.ui.material3.RichText
+import com.yash.edusmart.api.HistoryMessage
 import com.yash.edusmart.api.PresignDownloadRequest
 import com.yash.edusmart.api.PresignUploadRequest
 import com.yash.edusmart.helper.queryDisplayName
@@ -57,10 +59,14 @@ fun UploadFile(
 ) {
     var pickedUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var isUploading by remember { mutableStateOf(false) }
+    var isResponding by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     var selectedFileName by remember { mutableStateOf<String>("Select File") }
     var query by remember { mutableStateOf("") }
+
+    // Each entry: "user" or "ai" -> message text
+    val chatHistory = remember { mutableStateListOf<Pair<String, String>>() }
 
     val pickFile = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -71,10 +77,16 @@ fun UploadFile(
         }
     }
 
-    var response by remember { mutableStateOf("null") }
     LaunchedEffect(studentUiState.aiResponse) {
-        if(studentUiState.aiResponse!=""){
-            response=studentUiState.aiResponse
+        if (studentUiState.aiResponse != "") {
+            try {
+                val json = JSONObject(studentUiState.aiResponse)
+                val responseText = json.getString("response")
+                chatHistory.add("ai" to responseText.replace("\\n", "\n"))
+            } catch (e: Exception) {
+                chatHistory.add("ai" to studentUiState.aiResponse)
+            }
+            isResponding = false
         }
     }
 
@@ -127,7 +139,7 @@ fun UploadFile(
                     .padding(12.dp)
             ) {
 
-                // 📎 FILE CHIP
+                // ? FILE CHIP
                 if (selectedFileName.isNotEmpty() && selectedFileName != "Select File") {
                     Row(
                         modifier = Modifier
@@ -139,39 +151,75 @@ fun UploadFile(
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = "📎 $selectedFileName",
+                            text = if (isUploading) "Uploading $selectedFileName..." else selectedFileName,
                             color = Color(0xFF1976D2),
                             fontSize = 13.sp
                         )
                     }
                 }
+            }
+        }
 
-                // 🤖 AI RESPONSE (CHAT BUBBLE STYLE)
-                response.takeIf { it != "null" }?.let { res ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .background(
-                                    Color.Blue.copy(alpha = 0.2f),
-                                    RoundedCornerShape(16.dp)
-                                )
-                                .padding(12.dp)
-                                .fillMaxWidth(0.85f)
-                        ) {
-                            Text(
-                                text = "AI Assistant",
-                                fontSize = 12.sp
-                            )
+        // ? CHAT HISTORY
+        items(chatHistory) { (sender, message) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = if (sender == "user") Arrangement.End else Arrangement.Start
+            ) {
+                Column(
+                    modifier = Modifier
+                        .background(
+                            if (sender == "user") Color.Gray.copy(alpha = 0.2f)
+                            else Color.Blue.copy(alpha = 0.2f),
+                            RoundedCornerShape(16.dp)
+                        )
+                        .padding(12.dp)
+                        .fillMaxWidth(0.85f)
+                ) {
+                    Text(
+                        text = if (sender == "user") "You" else "AI Assistant",
+                        fontSize = 12.sp
+                    )
 
-                            RichText {
-                                val json = JSONObject(res)
-                                val responseText = json.getString("response")
-                                Markdown(responseText.replace("\\n", "\n"))
-                            }
+                    if (sender == "ai") {
+                        RichText {
+                            Markdown(message)
                         }
+                    } else {
+                        Text(text = message)
+                    }
+                }
+            }
+        }
+
+        // ? AI THINKING INDICATOR
+        if (isResponding) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .background(
+                                Color.Blue.copy(alpha = 0.2f),
+                                RoundedCornerShape(16.dp)
+                            )
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = "AI Assistant",
+                            fontSize = 12.sp
+                        )
+                        Text(
+                            text = "Thinking...",
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
                     }
                 }
             }
@@ -179,7 +227,7 @@ fun UploadFile(
 
         item {
 
-            // 🔥 INPUT BAR (CHATGPT STYLE)
+            // ? INPUT BAR (CHATGPT STYLE)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -195,20 +243,24 @@ fun UploadFile(
                         .weight(1f)
                         .padding(end = 8.dp),
                     shape = RoundedCornerShape(24.dp),
+                    enabled = !isUploading && !isResponding,
                     trailingIcon = {
                         Row {
 
-                            // 📎 ATTACH
-                            IconButton(onClick = {
-                                pickFile.launch(
-                                    arrayOf(
-                                        "application/pdf",
-                                        "image/*",
-                                        "application/msword",
-                                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            // ? ATTACH
+                            IconButton(
+                                onClick = {
+                                    pickFile.launch(
+                                        arrayOf(
+                                            "application/pdf",
+                                            "image/*",
+                                            "application/msword",
+                                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                        )
                                     )
-                                )
-                            }) {
+                                },
+                                enabled = !isUploading && !isResponding
+                            ) {
                                 Icon(Icons.Default.Attachment, null)
                             }
 
@@ -216,20 +268,44 @@ fun UploadFile(
                     }
                 )
 
-                // 🚀 SEND BUTTON (CIRCULAR)
+                // ? SEND BUTTON (CIRCULAR)
                 IconButton(
                     onClick = {
-                        studentViewModel.rag(query)
-                        query = ""
+                        if (query.isNotBlank() && !isUploading && !isResponding) {
+                            chatHistory.add("user" to query)
+
+                            val historyMessages = chatHistory.dropLast(1).map { (sender, msg) ->
+                                HistoryMessage(
+                                    role = if (sender == "user") "user" else "ai",
+                                    content = msg
+                                )
+                            }
+
+                            isResponding = true
+                            studentViewModel.rag(query, historyMessages)
+                            query = ""
+                        }
                     },
+                    enabled = !isUploading && !isResponding,
                     modifier = Modifier
-                        .background(Color(0xFF1976D2), RoundedCornerShape(50))
+                        .background(
+                            if (isUploading || isResponding) Color.Gray else Color(0xFF1976D2),
+                            RoundedCornerShape(50)
+                        )
                 ) {
-                    Icon(
-                        Icons.Default.Send,
-                        contentDescription = "Send",
-                        tint = Color.White
-                    )
+                    if (isUploading || isResponding) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.Send,
+                            contentDescription = "Send",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
         }

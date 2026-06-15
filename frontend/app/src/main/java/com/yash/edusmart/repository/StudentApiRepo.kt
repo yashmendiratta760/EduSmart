@@ -6,6 +6,7 @@ import com.yash.edusmart.api.ChatEntity
 import com.yash.edusmart.api.ChatRequest
 import com.yash.edusmart.api.GeneralRequest
 import com.yash.edusmart.api.HolidayEntity
+import com.yash.edusmart.api.PlannerRequest
 import com.yash.edusmart.api.PresignDownloadRequest
 import com.yash.edusmart.api.PresignDownloadResponse
 import com.yash.edusmart.api.PresignUploadRequest
@@ -100,7 +101,7 @@ interface StudentApiRepo
     ): Response<String>
 
     suspend fun plannerS(
-        @Body query: String
+        @Body request: PlannerRequest
     ): Response<String>
 }
 
@@ -196,8 +197,8 @@ class StudentApiRepoImpl @Inject constructor(private val studentApi: StudentApi)
         return studentApi.rag(request)
     }
 
-    override suspend fun plannerS(query: String): Response<String> {
-        return studentApi.plannerS(query)
+    override suspend fun plannerS(request: PlannerRequest): Response<String> {
+        return studentApi.plannerS(request)
     }
 }
 

@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -21,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.halilibo.richtext.markdown.Markdown
 import com.halilibo.richtext.ui.material3.RichText
+import com.yash.edusmart.api.HistoryMessage
 import com.yash.edusmart.viewmodel.StudentUiState
 import com.yash.edusmart.viewmodel.StudentViewModel
 import org.json.JSONObject
@@ -43,58 +48,89 @@ fun Suggestions(
     studentUiState: StudentUiState
 ) {
 
-
     var query by remember { mutableStateOf("") }
+    var isResponding by remember { mutableStateOf(false) }
 
+    // Each entry: "user" or "ai" -> message text
+    val chatHistory = remember { mutableStateListOf<Pair<String, String>>() }
 
-    var response by remember { mutableStateOf("null") }
     LaunchedEffect(studentUiState.aiResponse) {
-        if(studentUiState.aiResponse!=""){
-            response=studentUiState.aiResponse
+        if (studentUiState.aiResponse != "") {
+            try {
+                val json = JSONObject(studentUiState.aiResponse)
+                val responseText = json.getString("response")
+                chatHistory.add("ai" to responseText.replace("\\n", "\n"))
+            } catch (e: Exception) {
+                chatHistory.add("ai" to studentUiState.aiResponse)
+            }
         }
+        isResponding = false
     }
-
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize(),
         verticalArrangement = Arrangement.Bottom
     ) {
-        item {
 
-            Column(
+        items(chatHistory) { (sender, message) ->
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp)
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = if (sender == "user") Arrangement.End else Arrangement.Start
             ) {
+                Column(
+                    modifier = Modifier
+                        .background(
+                            if (sender == "user") Color.Gray.copy(alpha = 0.2f)
+                            else Color.Blue.copy(alpha = 0.2f),
+                            RoundedCornerShape(16.dp)
+                        )
+                        .padding(12.dp)
+                        .fillMaxWidth(0.85f)
+                ) {
+                    Text(
+                        text = if (sender == "user") "You" else "AI Assistant",
+                        fontSize = 12.sp
+                    )
 
-
-                // 🤖 AI RESPONSE (CHAT BUBBLE STYLE)
-                response.takeIf { it != "null" }?.let { res ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .background(
-                                    Color.Blue.copy(alpha = 0.2f),
-                                    RoundedCornerShape(16.dp)
-                                )
-                                .padding(12.dp)
-                                .fillMaxWidth(0.85f)
-                        ) {
-                            Text(
-                                text = "AI Assistant",
-                                fontSize = 12.sp
-                            )
-
-                            RichText {
-                                val json = JSONObject(res)
-                                val responseText = json.getString("response")
-                                Markdown(responseText.replace("\\n", "\n"))
-                            }
+                    if (sender == "ai") {
+                        RichText {
+                            Markdown(message)
                         }
+                    } else {
+                        Text(text = message)
+                    }
+                }
+            }
+        }
+
+        if (isResponding) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .background(
+                                Color.Blue.copy(alpha = 0.2f),
+                                RoundedCornerShape(16.dp)
+                            )
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = "AI Assistant",
+                            fontSize = 12.sp
+                        )
+                        Text(
+                            text = "Thinking...",
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
                     }
                 }
             }
@@ -102,7 +138,7 @@ fun Suggestions(
 
         item {
 
-            // 🔥 INPUT BAR (CHATGPT STYLE)
+            // ? INPUT BAR (CHATGPT STYLE)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -118,22 +154,44 @@ fun Suggestions(
                         .weight(1f)
                         .padding(end = 8.dp),
                     shape = RoundedCornerShape(24.dp),
+                    enabled = !isResponding
                 )
 
-                // 🚀 SEND BUTTON (CIRCULAR)
+                // ? SEND BUTTON (CIRCULAR)
                 IconButton(
                     onClick = {
-                        studentViewModel.suggestions(query)
-                        query = ""
+                        if (query.isNotBlank()) {
+                            chatHistory.add("user" to query)
+
+                            val historyMessages = chatHistory.dropLast(1).map { (sender, msg) ->
+                                HistoryMessage(
+                                    role = if (sender == "user") "user" else "ai",
+                                    content = msg
+                                )
+                            }
+                            isResponding = true
+
+                            studentViewModel.suggestions(query, historyMessages)
+                            query = ""
+                        }
                     },
+                    enabled = !isResponding,
                     modifier = Modifier
                         .background(Color(0xFF1976D2), RoundedCornerShape(50))
                 ) {
-                    Icon(
-                        Icons.Default.Send,
-                        contentDescription = "Send",
-                        tint = Color.White
-                    )
+                    if (isResponding) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.Send,
+                            contentDescription = "Send",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
         }

@@ -100,7 +100,7 @@ interface StudentApi
 
     @POST("/AI/plan")
     suspend fun plannerS(
-        @Body query: String
+        @Body request: PlannerRequest
     ): Response<String>
 
 
@@ -111,16 +111,21 @@ interface StudentApi
 
 }
 
+data class PlannerRequest(
+    val query: String,
+    val history:List<HistoryMessage> = emptyList()
+)
+
 
 data class ChatRequest(
     val query: String,
-    val history:List<String> = emptyList()
+    val history:List<HistoryMessage> = emptyList()
 )
 
 data class GeneralRequest @RequiresApi(Build.VERSION_CODES.O) constructor(
     val user_query: String,
     val current_date: String= LocalDate.now().toString(),
-    val history:List<String> = emptyList()
+    val history:List<HistoryMessage> = emptyList()
 )
 
 
@@ -168,4 +173,10 @@ data class AttendanceDTO(
     val date: String,
     val status: String,
     val subject: String
+)
+
+
+data class HistoryMessage(
+    val role: String,
+    val content: String
 )

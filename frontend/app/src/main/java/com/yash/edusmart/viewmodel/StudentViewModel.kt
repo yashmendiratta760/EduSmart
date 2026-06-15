@@ -8,6 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.yash.edusmart.api.AttendanceDTO
 import com.yash.edusmart.api.ChatRequest
 import com.yash.edusmart.api.GeneralRequest
+import com.yash.edusmart.api.HistoryMessage
+import com.yash.edusmart.api.PlannerRequest
 import com.yash.edusmart.api.PresignDownloadRequest
 import com.yash.edusmart.api.PresignDownloadResponse
 import com.yash.edusmart.api.PresignUploadRequest
@@ -417,28 +419,34 @@ class StudentViewModel @Inject constructor(private val contextRepo: ContextRepo,
         Log.d("VECTOR", res.body()?.toString() ?: "null")
     }
 
-    fun rag(query: String){
+    fun rag(query: String, history: List<HistoryMessage> = emptyList()) {
         viewModelScope.launch {
-            val res = studentApiRepo.rag(request = ChatRequest(query = query))
-            _uiState.update { it ->
+            val res = studentApiRepo.rag(
+                request = ChatRequest(query = query, history = history)
+            )
+            _uiState.update {
                 it.copy(aiResponse = res.body() ?: "some error occurred")
             }
         }
     }
 
-    fun general(query: String){
+    fun general(query: String, history: List<HistoryMessage> = emptyList()) {
         viewModelScope.launch {
-            val res = studentApiRepo.generalChat(request = GeneralRequest(user_query = query))
-            _uiState.update { it ->
+            val res = studentApiRepo.generalChat(
+                request = GeneralRequest(user_query = query, history = history)
+            )
+            _uiState.update {
                 it.copy(aiResponse = res.body() ?: "some error occurred")
             }
         }
     }
 
-    fun suggestions(query: String){
+    fun suggestions(query: String, history: List<HistoryMessage> = emptyList()) {
         viewModelScope.launch {
-            val res = studentApiRepo.plannerS(query=query)
-            _uiState.update { it ->
+            val res = studentApiRepo.plannerS(
+                request = PlannerRequest(query = query, history = history)
+            )
+            _uiState.update {
                 it.copy(aiResponse = res.body() ?: "some error occurred")
             }
         }
