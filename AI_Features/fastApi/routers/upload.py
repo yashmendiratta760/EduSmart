@@ -2,6 +2,7 @@ import os
 import uuid
 import requests
 from urllib.parse import urlparse
+from dotenv import load_dotenv
 
 from fastapi import APIRouter, Depends
 from langchain_mistralai import MistralAIEmbeddings
@@ -14,10 +15,13 @@ from langchain_community.document_loaders import (
 )
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from models.requests import UploadRequest
 from utils.auth import get_current_user
-from chroma_connection import get_chroma_client
+from chroma_connection import get_chroma_client,get_chroma_collection
 
 router = APIRouter()
+
+load_dotenv()
 
 
 def get_loader(file_path: str, file_ext: str):
@@ -35,11 +39,12 @@ def get_loader(file_path: str, file_ext: str):
 
 @router.post("/upload")
 async def upload_file(
-    file_url: str,
+    request: UploadRequest,
     current_user: dict = Depends(get_current_user)
 ):
     temp_file = None
     try:
+        file_url = request.file_url
         response = requests.get(str(file_url))
         response.raise_for_status()
 
@@ -64,15 +69,14 @@ async def upload_file(
 
         embeddings = MistralAIEmbeddings()
 
-        collection_name = (
-            f"{current_user['user_type']}_{current_user['email']}"
-            .replace("@", "_")
-            .replace(".", "_")
-        )
+        collection_name = get_chroma_collection(current_user['user_type'],current_user['email'],get_chroma_client())
+        
 
         client = get_chroma_client()
+
+        print(client.list_collections())
         try:
-            client.delete_collection(collection_name)
+            client.delete_collection(name=collection_name)
         except Exception:
             pass
 
@@ -81,7 +85,14 @@ async def upload_file(
             collection_name=collection_name,
             embedding_function=embeddings
         )
-        vectorstore.add_documents(docs)
+        try:
+            vectorstore.add_documents(docs)
+        except Exception as e:
+            print("CHROMA ERROR:", e)
+            raise
+
+        collection = client.get_collection(collection_name)
+        print(collection.count())
 
         return {
             "status": "success",

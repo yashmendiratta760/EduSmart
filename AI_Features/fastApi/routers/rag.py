@@ -14,6 +14,7 @@ def load_user_vectorstore(user_id: str, user_type: str):
     embeddings = MistralAIEmbeddings()
     collection_name = (
         f"{user_type}_{user_id}"
+        .lower()
         .replace("@", "_")
         .replace(".", "_")
     )
@@ -28,7 +29,7 @@ def get_retrieved_context(query: str, user_id: str, user_type: str):
     vectorstore = load_user_vectorstore(user_id, user_type)
     retriever = vectorstore.as_retriever(
         search_type="mmr",
-        search_kwargs={"k": 3, "fetch_k": 6}
+        search_kwargs={"k": 4, "fetch_k": 20}
     )
     docs = retriever.invoke(query)
     return "\n\n".join(doc.page_content for doc in docs) if docs else ""
@@ -54,7 +55,6 @@ def chat(
 
         return {
             "response": response,
-            "context_used": bool(retrieved_context)
         }
 
     except FileNotFoundError:

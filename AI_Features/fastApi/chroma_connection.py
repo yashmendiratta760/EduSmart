@@ -10,6 +10,10 @@ load_dotenv()
 _client: ClientAPI | None = None
 _collection: Collection | None = None
 
+def get_collection_name(user_type: str, email: str) -> str:
+    safe_email = email.replace("@", "_").replace(".", "_")
+    return f"{user_type}_{safe_email}"
+
 def get_chroma_client() -> ClientAPI:
 	global _client
 	if _client is None:
@@ -20,10 +24,17 @@ def get_chroma_client() -> ClientAPI:
         )
 	return _client
 
-def get_chroma_collection(client: ClientAPI = Depends(get_chroma_client)) -> Collection:
-	global _collection
-	if _collection is None:
-		_collection = client.get_or_create_collection(
-		    name="my_collection",
-		)
-	return _collection
+def get_chroma_collection(
+    user_type: str,
+    email: str,
+    client: ClientAPI
+) -> str:
+
+    collection_name = (
+        f"{user_type}_{email}"
+        .lower()
+        .replace("@", "_")
+        .replace(".", "_")
+    )
+
+    return collection_name

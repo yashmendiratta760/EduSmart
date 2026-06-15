@@ -24,3 +24,8 @@ class GeneralRequest(BaseModel):
     user_query: str
     current_date: str
     history: list = []
+
+
+
+class UploadRequest(BaseModel):
+    file_url: str
