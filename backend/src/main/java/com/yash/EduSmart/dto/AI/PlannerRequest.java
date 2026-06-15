@@ -21,5 +21,5 @@ public class PlannerRequest {
     String career_goal="";
     String preferred_activities="";
     String available_hours="";
-    List<String> history= Collections.emptyList();
+    List<HistoryMessage> history= Collections.emptyList();
 }

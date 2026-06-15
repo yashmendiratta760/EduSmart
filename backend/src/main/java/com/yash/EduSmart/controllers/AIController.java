@@ -5,6 +5,7 @@ import com.yash.EduSmart.Entity.UserEntity;
 import com.yash.EduSmart.config.SupabaseStorageClient;
 import com.yash.EduSmart.dto.AI.ChatRequest;
 import com.yash.EduSmart.dto.AI.GeneralRequest;
+import com.yash.EduSmart.dto.AI.PlannerRequest;
 import com.yash.EduSmart.dto.AssignmentStudent;
 import com.yash.EduSmart.dto.PresignUploadRequest;
 import com.yash.EduSmart.dto.PresignUploadResponse;
@@ -173,10 +174,10 @@ public class AIController {
     @PostMapping("/plan")
     public ResponseEntity<?> planSuggest(
             @RequestHeader("Authorization") String authHeader,
-            @RequestBody(required = false) String query
-    ) {
+            @RequestBody(required = false)PlannerRequest request
+            ) {
         try {
-            if (query == null || query.isBlank()) {
+            if (request == null) {
                 return ResponseEntity.badRequest().body("Query cannot be empty");
             }
 
@@ -243,12 +244,13 @@ public class AIController {
 
             return ResponseEntity.ok(
                     aiService.plan(
-                            query,
+                            request.getUser_query(),
                             token,
                             timetable,
                             assignments,
                             holidays,
-                            branch.getName()
+                            branch.getName(),
+                            request.getHistory()
                     )
             );
 

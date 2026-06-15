@@ -13,5 +13,5 @@ import java.util.List;
 public class ChatRequest
 {
     String query;
-    List<String> history = Collections.emptyList();
+    List<HistoryMessage> history = Collections.emptyList();
 }

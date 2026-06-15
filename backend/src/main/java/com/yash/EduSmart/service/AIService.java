@@ -2,6 +2,7 @@ package com.yash.EduSmart.service;
 
 import com.yash.EduSmart.dto.AI.ChatRequest;
 import com.yash.EduSmart.dto.AI.GeneralRequest;
+import com.yash.EduSmart.dto.AI.HistoryMessage;
 import com.yash.EduSmart.dto.AI.PlannerRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +13,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -94,7 +96,8 @@ public class AIService {
         return response.getBody();
     }
 
-    public String plan(String query,String jwtToken,String timeTable,String test,String holidays,String careerGoal){
+    public String plan(String query, String jwtToken, String timeTable, String test, String holidays, String careerGoal,
+                       List<HistoryMessage> history){
         String url = AI_API_URL+"planner";
 
         HttpHeaders headers = new HttpHeaders();
@@ -107,6 +110,7 @@ public class AIService {
         request.setTimetable(timeTable);
         request.setHolidays(holidays);
         request.setCareer_goal(careerGoal);
+        request.setHistory(history);
 
         HttpEntity<PlannerRequest> request2 =
                 new HttpEntity<>(request, headers);

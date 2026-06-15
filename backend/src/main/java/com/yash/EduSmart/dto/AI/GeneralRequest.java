@@ -14,5 +14,5 @@ import java.util.List;
 public class GeneralRequest{
     String user_query;
     String current_date = LocalDate.now().toString();
-    List<String> history= Collections.emptyList();
+    List<HistoryMessage> history= Collections.emptyList();
 }
