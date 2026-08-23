@@ -18,7 +18,6 @@ public class ChatEntity {
     private Long id;
 
     private String msg;
-    private Boolean isSent;
 
     private String sender;
 

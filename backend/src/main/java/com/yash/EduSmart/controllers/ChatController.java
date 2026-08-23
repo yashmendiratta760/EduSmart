@@ -63,7 +63,6 @@ public class ChatController
             entity.setMsg(message.getMessage());
             entity.setSender(message.getSender());
             entity.setReceiver(message.getReceiver());
-            entity.setIsSent(true);
             entity.setTimeStamp(now);
 
             chatService.addMessage(entity);
@@ -105,7 +104,6 @@ public class ChatController
             entity.setSender(message.getSender());
             entity.setReceiver(groupId);
             entity.setTimeStamp(System.currentTimeMillis());
-            entity.setIsSent(true);
             chatService.addMessage(entity);
 
             return message;

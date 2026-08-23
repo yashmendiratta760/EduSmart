@@ -1,9 +1,7 @@
 package com.yash.EduSmart.controllers;
 
-import com.yash.EduSmart.Entity.ChatEntity;
-import com.yash.EduSmart.Entity.HolidayEntity;
-import com.yash.EduSmart.Entity.TimeTableEntry;
-import com.yash.EduSmart.Entity.UserEntity;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.yash.EduSmart.Entity.*;
 import com.yash.EduSmart.config.SupabaseStorageClient;
 import com.yash.EduSmart.dto.*;
 import com.yash.EduSmart.service.*;
@@ -32,7 +30,7 @@ public class StudentController {
     private UserService userService;
 
     @Autowired
-    private BranchService branchService; // (unused here but kept)
+    private BranchService branchService; // (unused here but kept
 
     @Autowired
     private AssignmentService assignmentService;
@@ -45,6 +43,9 @@ public class StudentController {
 
     @Autowired
     private ChatService chatService;
+
+    @Autowired
+    private RedisService redisService;
 
     @Value("${SUPABASE_URL}")
     private String baseUrl;
@@ -76,13 +77,21 @@ public class StudentController {
                 return ResponseEntity.badRequest().body(Collections.emptyList());
             }
 
-            List<TimeTableDTO> dtos = timeTableService.getEntryByBranchAndSemester(b, sem);
-            if (dtos == null || dtos.isEmpty()) {
+            String timetableKey = "timetable:"+b+":"+sem;
+            List<TimeTableDTO> entries = redisService.get(timetableKey, new TypeReference<List<TimeTableDTO>>() {});
+            if(entries==null) {
+                entries = timeTableService.getEntryByBranchAndSemester(b, sem);
+                if (entries == null || entries.isEmpty()) {
+                    return ResponseEntity.ok(Collections.emptyList());
+                }
+                redisService.set(timetableKey,entries,86400*7);
+            }
+            if (entries == null || entries.isEmpty()) {
                 return ResponseEntity.ok(Collections.emptyList());
             }
 
 
-            return ResponseEntity.ok(dtos);
+            return ResponseEntity.ok(entries);
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -114,8 +123,12 @@ public class StudentController {
             }
 
 
-
-            List<StudentData> result = userService.findStudentsByBranch(branch,sem);
+            String key = "studentlist:" + branch + sem;
+            List<StudentData> result = redisService.get(key, new TypeReference<List<StudentData>>() {});
+            if(result==null){
+                result = userService.findStudentsByBranch(branch,sem);
+                redisService.set(key,result,86400);
+            }
 
             return ResponseEntity.ok(result);
 
@@ -146,8 +159,12 @@ public class StudentController {
                 return ResponseEntity.badRequest()
                         .body(new ArrayList<>(Collections.singletonList("Invalid semester")));
             }
-
-            List<String> subjects = timeTableService.getAllSubjects(b, sem);
+            String key = "subjectlist:" + branch + sem;
+            List<String> subjects = redisService.get(key, new TypeReference<List<String>>() {});
+            if(subjects==null) {
+                subjects = timeTableService.getAllSubjects(b, sem);
+                if(subjects!=null) redisService.set(key,subjects,86400);
+            }
             if (subjects == null) subjects = Collections.emptyList();
 
             return ResponseEntity.ok(subjects);
@@ -199,8 +216,11 @@ public class StudentController {
             if (user == null) {
                 return ResponseEntity.badRequest().body("User not found");
             }
-
+            AssignmentEntity assignmentEntity = assignmentService.findById(idAss);
+            String key = "assignment:"+assignmentEntity.getBranch().getName()+assignmentEntity.getBranch().getSemester();
             assignmentService.updateEntry(user, idAss);
+            redisService.delete(key);
+
             return ResponseEntity.ok("Success");
 
         } catch (Exception e) {
@@ -216,7 +236,16 @@ public class StudentController {
     ) {
         try {
             int semester = Integer.parseInt(safeTrim(sem));
-            List<AssignmentStudent> dtos = assignmentService.findAllForStudent(branch,semester);
+
+            String key = "assignmentStudent:"+branch+sem;
+            List<AssignmentStudent> dtos = redisService.get(key, new TypeReference<List<AssignmentStudent>>() {});
+            if(dtos==null) {
+                dtos = assignmentService.findAllForStudent(branch, semester);
+                if(dtos!=null)
+                {
+                    redisService.set(key,dtos,86400);
+                }
+            }
             if (dtos == null || dtos.isEmpty()) {
                 return ResponseEntity.ok(Collections.emptyList());
             }
@@ -233,7 +262,12 @@ public class StudentController {
     @GetMapping("/getHolidays")
     public ResponseEntity<List<HolidayEntity>> getHolidays() {
         try {
-            List<HolidayEntity> list = holidayService.getAll();
+            String key = "holidays";
+            List<HolidayEntity> list = redisService.get(key, new TypeReference<List<HolidayEntity>>() {});
+            if(list==null){
+                list = holidayService.getAll();
+                if(list!=null) redisService.set(key,list,86400*7);
+            }
             if (list == null) list = Collections.emptyList();
             return ResponseEntity.ok(list);
         } catch (Exception e) {
@@ -294,7 +328,12 @@ public class StudentController {
             @RequestParam String sem
     ){
         try {
-            List<TeacherDTO> users = timeTableService.findTeachersByBranchAndSemDto(branch,sem);
+            String key = "Teachers:"+branch+sem;
+            List<TeacherDTO> users = redisService.get(key, new TypeReference<List<TeacherDTO>>() {});
+            if(users==null){
+                users = timeTableService.findTeachersByBranchAndSemDto(branch,sem);
+                redisService.set(key,users,86400*2);
+            }
             return ResponseEntity.ok(users);
         }catch (Exception e){
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

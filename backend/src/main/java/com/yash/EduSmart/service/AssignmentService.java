@@ -3,6 +3,7 @@ package com.yash.EduSmart.service;
 import com.yash.EduSmart.Entity.AssignmentEntity;
 import com.yash.EduSmart.Entity.Branch;
 import com.yash.EduSmart.Entity.UserEntity;
+import com.yash.EduSmart.dto.Assignment;
 import com.yash.EduSmart.dto.AssignmentDTO;
 import com.yash.EduSmart.dto.AssignmentGetDTO;
 import com.yash.EduSmart.dto.AssignmentStudent;
@@ -88,6 +89,10 @@ public class AssignmentService {
                         a.getPathOfFile()
                 ))
                 .toList();
+    }
+
+    public AssignmentEntity findById(long id){
+        return assignmentRepo.findById(id).orElse(null);
     }
 
 

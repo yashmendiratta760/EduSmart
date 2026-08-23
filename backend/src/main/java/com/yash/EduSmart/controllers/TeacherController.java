@@ -1,5 +1,6 @@
 package com.yash.EduSmart.controllers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.yash.EduSmart.Entity.*;
 import com.yash.EduSmart.config.SupabaseStorageClient;
 import com.yash.EduSmart.dto.*;
@@ -39,6 +40,9 @@ public class TeacherController {
 
     @Autowired
     private AssignmentService assignmentService;
+
+    @Autowired
+    private RedisService redisService;
 
     @Value("${SUPABASE_URL}")
     private String baseUrl;
@@ -112,11 +116,17 @@ public class TeacherController {
             if (list == null || list.isEmpty()) {
                 return ResponseEntity.badRequest().body("Attendance list is empty");
             }
-
-            Branch branch = branchService.getByNameAndSemester(branchName, sem);
-            if (branch == null) {
-                return ResponseEntity.badRequest().body("Branch not found");
+            String branchKey = "branch:"+branchName+":"+sem;
+            Branch branch = redisService.get(branchKey, Branch.class);
+            if(branch==null) {
+                branch = branchService.getByNameAndSemester(branchName, sem);
+                if (branch == null) {
+                    return ResponseEntity.badRequest().body("Branch not found");
+                }
+                redisService.set(branchKey,branch,86400*7);
             }
+
+
 
             TimeTableEntry timeTableEntry = timeTableService.getAttendanceUploadSlot(
                     uploadDTO.getDate().getDayOfWeek().name().toUpperCase(),
@@ -236,11 +246,16 @@ public class TeacherController {
             } catch (NumberFormatException ex) {
                 return ResponseEntity.badRequest().body(Collections.emptyList());
             }
-
-            List<TimeTableDTO> entries = timeTableService.getEntryByBranchAndSemester(b, sem);
-            if (entries == null || entries.isEmpty()) {
-                return ResponseEntity.ok(Collections.emptyList());
+            String timetableKey = "timetable:"+b+":"+sem;
+            List<TimeTableDTO> entries = redisService.get(timetableKey, new TypeReference<List<TimeTableDTO>>() {});
+            if(entries==null) {
+                entries = timeTableService.getEntryByBranchAndSemester(b, sem);
+                if (entries == null || entries.isEmpty()) {
+                    return ResponseEntity.ok(Collections.emptyList());
+                }
+                redisService.set(timetableKey,entries,86400*7);
             }
+
 
             return ResponseEntity.ok(entries);
 
@@ -269,9 +284,12 @@ public class TeacherController {
             } catch (NumberFormatException ex) {
                 return ResponseEntity.badRequest().body(Collections.emptyList());
             }
-
-
-            List<StudentData> studentEmails = userService.findStudentsByBranch(branch,sem);
+            String studentKey = "studentlist:"+branch+sem;
+            List<StudentData> studentEmails = redisService.get(studentKey, new TypeReference<List<StudentData>>() {});
+            if(studentEmails==null){
+                studentEmails = userService.findStudentsByBranch(branch,sem);
+                redisService.set(studentKey,studentEmails,86400);
+            }
 
             return ResponseEntity.ok(studentEmails);
 
@@ -283,7 +301,12 @@ public class TeacherController {
     @GetMapping("/getAllBranch")
     public ResponseEntity<List<String>> getBranchList() {
         try {
-            List<String> list = branchService.getAllBranch();
+            String key = "allbranches";
+            List<String> list = redisService.get(key, new TypeReference<List<String>>() {});
+            if(list==null){
+                list = branchService.getAllBranch();
+                if(list!=null) redisService.set(key,list,86400);
+            }
             if (list == null) list = Collections.emptyList();
             return ResponseEntity.ok(list);
         } catch (Exception e) {
@@ -298,7 +321,15 @@ public class TeacherController {
     ) {
         try {
             int semester = Integer.parseInt(safeTrim(sem));
-            List<AssignmentGetDTO> dtos = assignmentService.findByBranchAndSem(branch,semester);
+            String key = "assignment:"+branch+sem;
+            List<AssignmentGetDTO> dtos = redisService.get(key, new TypeReference<List<AssignmentGetDTO>>() {});
+            if(dtos==null) {
+                dtos = assignmentService.findByBranchAndSem(branch, semester);
+                if(dtos!=null)
+                {
+                    redisService.set(key,dtos,86400);
+                }
+            }
             if (dtos == null || dtos.isEmpty()) {
                 return ResponseEntity.ok(Collections.emptyList());
             }
@@ -312,8 +343,20 @@ public class TeacherController {
     }
 
     @DeleteMapping("/deleteAssignment")
-    public ResponseEntity<String> deleteAssignment(@RequestParam Long id){
+    public ResponseEntity<String> deleteAssignment(@RequestParam Long id) {
+
+        AssignmentEntity assignmentEntity = assignmentService.findById(id);
+
+        if (assignmentEntity == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String key = "assignment:"+assignmentEntity.getBranch().getName()+assignmentEntity.getBranch().getSemester();
+
         assignmentService.deleteEntry(id);
+
+        redisService.delete(key);
+
         return ResponseEntity.ok("DELETED");
     }
 
@@ -334,8 +377,12 @@ public class TeacherController {
             if (user == null || user.getId() == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
             }
-
-            List<TimeTableDTO> timetable = timeTableService.findByTeacherId(user.getId());
+            String key = "teachertimetable:" + user.getId();
+            List<TimeTableDTO> timetable = redisService.get(key, new TypeReference<List<TimeTableDTO>>() {});
+            if(timetable==null) {
+                timetable = timeTableService.findByTeacherId(user.getId());
+                redisService.set(key,timetable,86400*7);
+            }
             return ResponseEntity.ok(timetable);
 
         } catch (Exception e) {

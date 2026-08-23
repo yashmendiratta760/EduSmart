@@ -30,11 +30,8 @@ public class BranchService {
         return branchRepo.findByNameAndSemester(name, sem);
     }
 
-    public List<String> getAllBranch(){
-        return branchRepo.findAll().stream().map(
-                branch -> branch.getName()
-        )
-                .distinct().toList();
+    public List<String> getAllBranch() {
+        return branchRepo.findAllDistinctNames();
     }
 
 }
