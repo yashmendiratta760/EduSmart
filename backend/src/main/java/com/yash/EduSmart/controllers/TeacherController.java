@@ -5,6 +5,7 @@ import com.yash.EduSmart.Entity.*;
 import com.yash.EduSmart.config.SupabaseStorageClient;
 import com.yash.EduSmart.dto.*;
 import com.yash.EduSmart.service.*;
+import com.yash.RateLimiter.annotation.RateLimit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,7 +59,6 @@ public class TeacherController {
 //        try {
 //            if (timeTableDTO == null) return ResponseEntity.badRequest().body("Request body missing");
 //
-//            // Basic field checks (adjust according to your DTO fields)
 //            String day = safeTrim(timeTableDTO.getDay());
 //            String subject = safeTrim(timeTableDTO.getSubject());
 //            String timing = safeTrim(timeTableDTO.getTime());
@@ -94,6 +94,7 @@ public class TeacherController {
 //        }
 //    }
 
+    @RateLimit(limit = 10, window = 60, type = "token-bucket")
     @PostMapping("/uploadAttendance")
     public ResponseEntity<String> uploadAttendance(@RequestBody(required = false) AttendanceUploadDTO uploadDTO) {
         try {
@@ -116,17 +117,17 @@ public class TeacherController {
             if (list == null || list.isEmpty()) {
                 return ResponseEntity.badRequest().body("Attendance list is empty");
             }
-            String branchKey = "branch:"+branchName+":"+sem;
+
+            String branchKey = "branch:" + branchName + ":" + sem;
             Branch branch = redisService.get(branchKey, Branch.class);
-            if(branch==null) {
+
+            if (branch == null) {
                 branch = branchService.getByNameAndSemester(branchName, sem);
                 if (branch == null) {
                     return ResponseEntity.badRequest().body("Branch not found");
                 }
-                redisService.set(branchKey,branch,86400*7);
+                redisService.set(branchKey, branch, 86400 * 7);
             }
-
-
 
             TimeTableEntry timeTableEntry = timeTableService.getAttendanceUploadSlot(
                     uploadDTO.getDate().getDayOfWeek().name().toUpperCase(),
@@ -141,7 +142,6 @@ public class TeacherController {
 
             int success = 0, fail = 0;
 
-
             List<String> emails = uploadDTO.getAttendance().stream()
                     .map(AttendanceStatus::getEmail)
                     .filter(Objects::nonNull)
@@ -151,6 +151,7 @@ public class TeacherController {
                     .toList();
 
             List<UserEntity> users = userService.findByEmails(emails);
+
             Map<String, UserEntity> userMap = users.stream()
                     .collect(Collectors.toMap(UserEntity::getEmail, u -> u));
 
@@ -166,8 +167,8 @@ public class TeacherController {
                             a -> a
                     ));
 
-
             List<Attendance> toSave = new ArrayList<>();
+
             for (AttendanceStatus attendance : uploadDTO.getAttendance()) {
                 try {
                     if (attendance == null) {
@@ -176,14 +177,15 @@ public class TeacherController {
                     }
 
                     String email = safeTrim(attendance.getEmail());
+
                     if (email.isEmpty()) {
                         fail++;
                         continue;
                     }
 
                     UserEntity user = userMap.get(email);
+
                     if (user == null) {
-                        // 🔴 user not found in DB
                         fail++;
                         continue;
                     }
@@ -192,7 +194,6 @@ public class TeacherController {
 
                     if (entity != null) {
                         entity.setStatus(attendance.getStatus());
-                        // entity.setUpdatedAt(...) if you have it
                         toSave.add(entity);
                     } else {
                         Attendance newEntry = new Attendance();
@@ -212,8 +213,6 @@ public class TeacherController {
 
             if (!toSave.isEmpty()) attendanceService.saveAll(toSave);
 
-
-
             if (success == 0) {
                 return ResponseEntity.badRequest().body("Attendance upload failed. No entries were created.");
             } else if (fail > 0) {
@@ -227,6 +226,7 @@ public class TeacherController {
         }
     }
 
+    @RateLimit(limit = 60, window = 60, type = "fixed")
     @GetMapping("/getTimeTableByDay")
     public ResponseEntity<List<TimeTableDTO>> getTimeTableByDays(
             @RequestParam(required = false) String branch,
@@ -246,16 +246,23 @@ public class TeacherController {
             } catch (NumberFormatException ex) {
                 return ResponseEntity.badRequest().body(Collections.emptyList());
             }
-            String timetableKey = "timetable:"+b+":"+sem;
-            List<TimeTableDTO> entries = redisService.get(timetableKey, new TypeReference<List<TimeTableDTO>>() {});
-            if(entries==null) {
+
+            String timetableKey = "timetable:" + b + ":" + sem;
+
+            List<TimeTableDTO> entries = redisService.get(
+                    timetableKey,
+                    new TypeReference<List<TimeTableDTO>>() {}
+            );
+
+            if (entries == null) {
                 entries = timeTableService.getEntryByBranchAndSemester(b, sem);
+
                 if (entries == null || entries.isEmpty()) {
                     return ResponseEntity.ok(Collections.emptyList());
                 }
-                redisService.set(timetableKey,entries,86400*7);
-            }
 
+                redisService.set(timetableKey, entries, 86400 * 7);
+            }
 
             return ResponseEntity.ok(entries);
 
@@ -264,8 +271,11 @@ public class TeacherController {
         }
     }
 
+    @RateLimit(limit = 30, window = 60, type = "sliding-counter")
     @PostMapping("/getStudentsListTeacher")
-    public ResponseEntity<List<StudentData>> getStudentsList(@RequestBody(required = false) StudentsListDTO studentsListDTO) {
+    public ResponseEntity<List<StudentData>> getStudentsList(
+            @RequestBody(required = false) StudentsListDTO studentsListDTO) {
+
         try {
             if (studentsListDTO == null) {
                 return ResponseEntity.badRequest().body(Collections.emptyList());
@@ -279,16 +289,23 @@ public class TeacherController {
             }
 
             int sem;
+
             try {
                 sem = Integer.parseInt(semStr);
             } catch (NumberFormatException ex) {
                 return ResponseEntity.badRequest().body(Collections.emptyList());
             }
-            String studentKey = "studentlist:"+branch+sem;
-            List<StudentData> studentEmails = redisService.get(studentKey, new TypeReference<List<StudentData>>() {});
-            if(studentEmails==null){
-                studentEmails = userService.findStudentsByBranch(branch,sem);
-                redisService.set(studentKey,studentEmails,86400);
+
+            String studentKey = "studentlist:" + branch + sem;
+
+            List<StudentData> studentEmails = redisService.get(
+                    studentKey,
+                    new TypeReference<List<StudentData>>() {}
+            );
+
+            if (studentEmails == null) {
+                studentEmails = userService.findStudentsByBranch(branch, sem);
+                redisService.set(studentKey, studentEmails, 86400);
             }
 
             return ResponseEntity.ok(studentEmails);
@@ -298,22 +315,35 @@ public class TeacherController {
         }
     }
 
+    @RateLimit(limit = 60, window = 60, type = "fixed")
     @GetMapping("/getAllBranch")
     public ResponseEntity<List<String>> getBranchList() {
         try {
             String key = "allbranches";
-            List<String> list = redisService.get(key, new TypeReference<List<String>>() {});
-            if(list==null){
+
+            List<String> list = redisService.get(
+                    key,
+                    new TypeReference<List<String>>() {}
+            );
+
+            if (list == null) {
                 list = branchService.getAllBranch();
-                if(list!=null) redisService.set(key,list,86400);
+
+                if (list != null) {
+                    redisService.set(key, list, 86400);
+                }
             }
+
             if (list == null) list = Collections.emptyList();
+
             return ResponseEntity.ok(list);
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }
 
+    @RateLimit(limit = 60, window = 60, type = "sliding-counter")
     @GetMapping("/getAllAssignmentsByBranchAndSem")
     public ResponseEntity<List<AssignmentGetDTO>> getAll(
             @RequestParam String branch,
@@ -321,19 +351,25 @@ public class TeacherController {
     ) {
         try {
             int semester = Integer.parseInt(safeTrim(sem));
-            String key = "assignment:"+branch+sem;
-            List<AssignmentGetDTO> dtos = redisService.get(key, new TypeReference<List<AssignmentGetDTO>>() {});
-            if(dtos==null) {
+
+            String key = "assignment:" + branch + sem;
+
+            List<AssignmentGetDTO> dtos = redisService.get(
+                    key,
+                    new TypeReference<List<AssignmentGetDTO>>() {}
+            );
+
+            if (dtos == null) {
                 dtos = assignmentService.findByBranchAndSem(branch, semester);
-                if(dtos!=null)
-                {
-                    redisService.set(key,dtos,86400);
+
+                if (dtos != null) {
+                    redisService.set(key, dtos, 86400);
                 }
             }
+
             if (dtos == null || dtos.isEmpty()) {
                 return ResponseEntity.ok(Collections.emptyList());
             }
-
 
             return ResponseEntity.ok(dtos);
 
@@ -342,6 +378,7 @@ public class TeacherController {
         }
     }
 
+    @RateLimit(limit = 10, window = 60, type = "sliding-log")
     @DeleteMapping("/deleteAssignment")
     public ResponseEntity<String> deleteAssignment(@RequestParam Long id) {
 
@@ -351,7 +388,9 @@ public class TeacherController {
             return ResponseEntity.notFound().build();
         }
 
-        String key = "assignment:"+assignmentEntity.getBranch().getName()+assignmentEntity.getBranch().getSemester();
+        String key = "assignment:" +
+                assignmentEntity.getBranch().getName() +
+                assignmentEntity.getBranch().getSemester();
 
         assignmentService.deleteEntry(id);
 
@@ -360,6 +399,7 @@ public class TeacherController {
         return ResponseEntity.ok("DELETED");
     }
 
+    @RateLimit(limit = 60, window = 60, type = "fixed")
     @GetMapping("/getMyTImeTable")
     public ResponseEntity<List<TimeTableDTO>> getTimeTable(Principal principal) {
         try {
@@ -369,20 +409,29 @@ public class TeacherController {
             }
 
             String em = safeTrim(principal.getName());
+
             if (em.isEmpty()) {
                 return ResponseEntity.badRequest().body(Collections.emptyList());
             }
 
             UserEntity user = userService.findByEmail(em);
+
             if (user == null || user.getId() == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
             }
+
             String key = "teachertimetable:" + user.getId();
-            List<TimeTableDTO> timetable = redisService.get(key, new TypeReference<List<TimeTableDTO>>() {});
-            if(timetable==null) {
+
+            List<TimeTableDTO> timetable = redisService.get(
+                    key,
+                    new TypeReference<List<TimeTableDTO>>() {}
+            );
+
+            if (timetable == null) {
                 timetable = timeTableService.findByTeacherId(user.getId());
-                redisService.set(key,timetable,86400*7);
+                redisService.set(key, timetable, 86400 * 7);
             }
+
             return ResponseEntity.ok(timetable);
 
         } catch (Exception e) {
@@ -390,40 +439,48 @@ public class TeacherController {
         }
     }
 
+    @RateLimit(limit = 120, window = 60, type = "sliding-counter")
     @GetMapping("/getMessagesByBranchAndSem")
     public ResponseEntity<List<ChatEntity>> getGroupMessages(
             @RequestParam String branch,
             @RequestParam String sem
-    ){
+    ) {
         try {
-            List<ChatEntity> list = chatService.getMessageByReceiver(branch+" "+sem);
+            List<ChatEntity> list =
+                    chatService.getMessageByReceiver(branch + " " + sem);
+
             return ResponseEntity.ok(list);
-        }catch (Exception e){
+
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }
 
+    @RateLimit(limit = 120, window = 60, type = "sliding-log")
     @GetMapping("/getPvtMsg")
     public ResponseEntity<List<ChatEntity>> getPvtMessages(
             @RequestParam String email,
             @RequestParam String receiverEmail
-    ){
+    ) {
         try {
             String a = safeTrim(email);
             String b = safeTrim(receiverEmail);
+
             if (a.isEmpty() || b.isEmpty()) {
                 return ResponseEntity.badRequest().body(Collections.emptyList());
             }
 
-            List<ChatEntity> list = chatService.getConversation(a, b);
+            List<ChatEntity> list =
+                    chatService.getConversation(a, b);
+
             return ResponseEntity.ok(list);
 
-        } catch (Exception e){
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }
 
-
+    @RateLimit(limit = 10, window = 60, type = "token-bucket")
     @PostMapping("/presign-upload")
     public ResponseEntity<PresignUploadResponse> presignUpload(
             @RequestBody PresignUploadRequest request,
@@ -433,25 +490,32 @@ public class TeacherController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        // build safe path
-        String user = principal.getName(); // email or username
-        String safeFileName = request.getFileName().replaceAll("[^a-zA-Z0-9._-]", "_");
-        String path = user + "/" + UUID.randomUUID() + "_" + safeFileName;
+        String user = principal.getName();
+
+        String safeFileName = request.getFileName()
+                .replaceAll("[^a-zA-Z0-9._-]", "_");
+
+        String path = user + "/" +
+                UUID.randomUUID() +
+                "_" +
+                safeFileName;
 
         Map<String, Object> supabaseResponse =
                 storageClient.createSignedUrl(path);
+
         String url = (String) supabaseResponse.get("url");
+
         if (url == null) {
-            throw new RuntimeException("Supabase did not return url: " + supabaseResponse);
+            throw new RuntimeException(
+                    "Supabase did not return url: " + supabaseResponse
+            );
         }
 
-        return ResponseEntity.ok(new PresignUploadResponse(path, url));
-
-
-
+        return ResponseEntity.ok(
+                new PresignUploadResponse(path, url)
+        );
     }
 
-    // Android calls this when it wants to download
     @PostMapping("/presign-download")
     public ResponseEntity<PresignDownloadResponse> presignDownload(
             @RequestBody PresignDownloadRequest request,
@@ -460,25 +524,39 @@ public class TeacherController {
         if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+
         String path = request.getPath();
+
         if (path == null || path.isBlank()) {
             return ResponseEntity.badRequest().build();
         }
-        path = URLDecoder.decode(path, StandardCharsets.UTF_8);
+
+        path = URLDecoder.decode(
+                path,
+                StandardCharsets.UTF_8
+        );
+
         Map<String, Object> supabaseResponse =
                 storageClient.createSignedDownloadUrl(path);
+
         String url = (String) supabaseResponse.get("signedURL");
 
         if (url == null) {
-            throw new RuntimeException("Supabase did not return url: " + supabaseResponse);
+            throw new RuntimeException(
+                    "Supabase did not return url: " + supabaseResponse
+            );
         }
-        log.error("URL {}",url);
 
-        String fullurl = baseUrl+"/storage/v1"+url;
-        log.error("URL {}",fullurl);
-        return ResponseEntity.ok(new PresignDownloadResponse(fullurl));
+        log.error("URL {}", url);
+
+        String fullurl = baseUrl + "/storage/v1" + url;
+
+        log.error("URL {}", fullurl);
+
+        return ResponseEntity.ok(
+                new PresignDownloadResponse(fullurl)
+        );
     }
-
 
     private static String safeTrim(String s) {
         return s == null ? "" : s.trim();

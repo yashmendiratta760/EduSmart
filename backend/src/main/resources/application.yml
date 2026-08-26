@@ -12,8 +12,8 @@ spring:
 
   data:
     redis:
-      host: localhost
-      port: 6379
+      url: ${REDIS_URL}
+#      port: 6379
 
   datasource:
     url: ${DB_URL}
@@ -47,5 +47,10 @@ supabase:
   url: ${SUPABASE_URL}
   serviceKey: ${SUPABASE_SERVICE_KEY}
   bucket: "attachments"
+
+rate-limiter:
+  storage: redis
+  redis:
+    url: ${REDIS_URL}
 
 

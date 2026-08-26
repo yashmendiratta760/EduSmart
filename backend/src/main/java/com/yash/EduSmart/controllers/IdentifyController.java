@@ -9,6 +9,7 @@ import com.yash.EduSmart.dto.TokenData;
 import com.yash.EduSmart.dto.UserDTO;
 import com.yash.EduSmart.service.UserService;
 import com.yash.EduSmart.utils.JWTUtils;
+import com.yash.RateLimiter.annotation.RateLimit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -38,10 +39,14 @@ public class IdentifyController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-
+    @RateLimit(limit = 5)
     @GetMapping("/check")
     public ResponseEntity<String> check() {
-        return ResponseEntity.ok("Checking...");
+        try {
+            return ResponseEntity.ok("Checking...");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @PostMapping("/login")

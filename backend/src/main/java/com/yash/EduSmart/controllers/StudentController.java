@@ -5,6 +5,7 @@ import com.yash.EduSmart.Entity.*;
 import com.yash.EduSmart.config.SupabaseStorageClient;
 import com.yash.EduSmart.dto.*;
 import com.yash.EduSmart.service.*;
+import com.yash.RateLimiter.annotation.RateLimit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,9 +29,6 @@ public class StudentController {
 
     @Autowired
     private UserService userService;
-
-    @Autowired
-    private BranchService branchService; // (unused here but kept
 
     @Autowired
     private AssignmentService assignmentService;
@@ -57,6 +55,7 @@ public class StudentController {
     }
 
 
+    @RateLimit(limit = 60, window = 60, type = "fixed")
     @GetMapping("/getTimeTableByDay")
     public ResponseEntity<List<TimeTableDTO>> getTimeTableByDays(
             @RequestParam(required = false) String branch,
@@ -99,6 +98,7 @@ public class StudentController {
         }
     }
 
+    @RateLimit(limit = 30, window = 60, type = "sliding-counter")
     @PostMapping("/getStudentsList")
     public ResponseEntity<List<StudentData>> getStudentsList(
             @RequestBody(required = false) StudentsListDTO studentsListDTO
@@ -138,6 +138,7 @@ public class StudentController {
         }
     }
 
+    @RateLimit(limit = 60, window = 60, type = "fixed")
     @GetMapping("/getAllSubjects")
     public ResponseEntity<List<String>> getAllSubjects(
             @RequestParam(required = false) String branch,
@@ -175,6 +176,7 @@ public class StudentController {
         }
     }
 
+    @RateLimit(limit = 30, window = 60, type = "sliding-counter")
     @GetMapping("/getAttendance")
     public ResponseEntity<List<AttendanceDTO>> getAttendance(
             @RequestParam(required = false) String email
@@ -201,6 +203,7 @@ public class StudentController {
         }
     }
 
+    @RateLimit(limit = 5, window = 60, type = "leaky-bucket")
     @PostMapping("/markAssignment")
     public ResponseEntity<String> uploadAssignment(
             @RequestParam(required = false) Long idAss,
@@ -229,6 +232,7 @@ public class StudentController {
         }
     }
 
+    @RateLimit(limit = 60, window = 60, type = "fixed")
     @GetMapping("/getAllAssignmentsByBranchAndSem")
     public ResponseEntity<List<AssignmentStudent>> getAll(
             @RequestParam String branch,
@@ -259,6 +263,7 @@ public class StudentController {
         }
     }
 
+    @RateLimit(limit = 30, window = 60, type = "fixed")
     @GetMapping("/getHolidays")
     public ResponseEntity<List<HolidayEntity>> getHolidays() {
         try {
@@ -276,6 +281,7 @@ public class StudentController {
         }
     }
 
+    @RateLimit(limit = 30, window = 60, type = "token-bucket")
     @GetMapping("/getMessagesByBranchAndSem")
     public ResponseEntity<List<ChatEntity>> getGroupMessagesStudent(
             @RequestParam String branch,
@@ -289,6 +295,7 @@ public class StudentController {
         }
     }
 
+    @RateLimit(limit = 30, window = 60, type = "token-bucket")
     @GetMapping("/getPvtMsg")
     public ResponseEntity<List<ChatEntity>> getPvtMessagesStudent(
             @RequestParam String email,
@@ -311,6 +318,7 @@ public class StudentController {
     }
 
 
+    @RateLimit(limit = 10, window = 60, type = "token-bucket")
     @PutMapping("/addPvtMsg")
     public ResponseEntity<String> sendMsg(@RequestBody ChatEntity chatEntity){
         try {
@@ -322,6 +330,7 @@ public class StudentController {
         }
     }
 
+    @RateLimit(limit = 60, window = 60, type = "fixed")
     @GetMapping("/getAllTeachers")
     public ResponseEntity<List<TeacherDTO>> getAllTeacher(
             @RequestParam String branch,
@@ -341,6 +350,7 @@ public class StudentController {
         }
     }
 
+    @RateLimit(limit = 5, window = 60, type = "leaky-bucket")
     @PostMapping("/presign-download")
     public ResponseEntity<PresignDownloadResponse> presignDownload(
             @RequestBody PresignDownloadRequest request,
