@@ -9,3 +9,4 @@ pypdf
 python-dotenv
 fastapi
 uvicorn
+PyJWT
