@@ -1,7 +1,13 @@
-from langchain_mistralai.chat_models import ChatMistralAI
+
+import os
+from dotenv import load_dotenv
+
+from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage
 from langchain_core.output_parsers import StrOutputParser
+
+load_dotenv()
 
 SYSTEM_MESSAGE = """
 You are EduSmart AI, a Retrieval-Augmented Generation (RAG) assistant.
@@ -33,7 +39,11 @@ User Query:
 """)
 ])
 
-model = ChatMistralAI()
+model = ChatGroq(
+    model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+    temperature=0
+)
+
 parser = StrOutputParser()
 
 rag_chain = rag_prompt | model | parser

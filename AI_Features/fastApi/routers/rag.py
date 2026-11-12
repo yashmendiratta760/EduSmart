@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from langchain_mistralai import MistralAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import Chroma
 
 from utils.auth import get_current_user
@@ -9,15 +9,21 @@ from chroma_connection import get_chroma_client
 
 router = APIRouter()
 
+# Hosted Gemini embeddings — no local Sentence Transformers or PyTorch.
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="gemini-embedding-001",
+    output_dimensionality=1024
+)
+
 
 def load_user_vectorstore(user_id: str, user_type: str):
-    embeddings = MistralAIEmbeddings()
     collection_name = (
         f"{user_type}_{user_id}"
         .lower()
         .replace("@", "_")
         .replace(".", "_")
     )
+
     return Chroma(
         client=get_chroma_client(),
         collection_name=collection_name,
@@ -27,12 +33,17 @@ def load_user_vectorstore(user_id: str, user_type: str):
 
 def get_retrieved_context(query: str, user_id: str, user_type: str):
     vectorstore = load_user_vectorstore(user_id, user_type)
+
     retriever = vectorstore.as_retriever(
         search_type="mmr",
         search_kwargs={"k": 4, "fetch_k": 20}
     )
+
     docs = retriever.invoke(query)
-    return "\n\n".join(doc.page_content for doc in docs) if docs else ""
+
+    return "\n\n".join(
+        doc.page_content for doc in docs
+    ) if docs else ""
 
 
 @router.post("/rag")
@@ -54,11 +65,17 @@ def chat(
         })
 
         return {
-            "response": response,
+            "response": response
         }
 
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="No document uploaded for this user")
+        raise HTTPException(
+            status_code=404,
+            detail="No document uploaded for this user"
+        )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )

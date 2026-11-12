@@ -1,9 +1,11 @@
+import os
 from dotenv import load_dotenv
-from langchain_mistralai.chat_models import ChatMistralAI
+from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser
 from rich import print
+from datetime import date
 
 load_dotenv()
 
@@ -24,11 +26,11 @@ Guidelines:
 - Ask for clarification if a query is ambiguous.
 - Do not fabricate information—be honest when unsure.
 - Adapt your responses to suit the user's needs.
+- Be like an educated, friendly teacher who explains concepts
+  patiently and encourages students.
 
-Your goal is to educate, assist, and support users effectively in any conversation.
-
-
-Also be a little educated and firendly teacher kind of bot.
+Your goal is to educate, assist, and support users effectively
+in any conversation.
 """
 
 teacher_prompt = ChatPromptTemplate.from_messages([
@@ -42,22 +44,26 @@ User Query:
 """)
 ])
 
+model = ChatGroq(
+    model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+    temperature=0
+)
 
-model = ChatMistralAI()
 parser = StrOutputParser()
-
 
 chain = teacher_prompt | model | parser
 
 history = []
-print("----------Welcome to AI Teacher----------\n")
+MAX_HISTORY = 10
+
+print("----------Welcome to EduSmart AI Teacher----------\n")
 print("----------Type 0 to exit----------\n")
 print("----------------Type 'clear' to reset conversation.-----------------\n")
+
 while True:
+    question = input("YOU: ").strip()
 
-    question = input("YOU: ")
-
-    if question.lower() == "0":
+    if question == "0":
         print("👋 Goodbye! Stay consistent and motivated!")
         break
 
@@ -66,27 +72,26 @@ while True:
         print("✅ Chat history cleared.\n")
         continue
 
+    if not question:
+        continue
+
     input_data = {
-    "current_date": "2026-04-11",
-    "user_query": question,
-    "history": history
-    }   
+        "current_date": date.today().isoformat(),
+        "user_query": question,
+        "history": history
+    }
 
     try:
-        # Generate response using the chain
         response = chain.invoke(input_data)
 
-        # Store messages in history
         history.append(HumanMessage(content=question))
         history.append(AIMessage(content=response))
 
-        # Display AI response
-        print("\nAI Coach:\n")
+        print("\n[bold cyan]AI Teacher:[/bold cyan]\n")
         print(response)
         print()
 
-        # Limit history to avoid token overflow
-        MAX_HISTORY = 10
+        # Keep the latest 10 messages (5 conversation turns)
         history = history[-MAX_HISTORY:]
 
     except Exception as e:

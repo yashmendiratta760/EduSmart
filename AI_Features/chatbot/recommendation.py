@@ -1,13 +1,11 @@
 from dotenv import load_dotenv
+import os
+from datetime import date
 
-from langchain_mistralai.chat_models import ChatMistralAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.messages import SystemMessage,HumanMessage,AIMessage
-from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
+from langchain_groq import ChatGroq
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser
-
-from langchain_mistralai import MistralAIEmbeddings
-from langchain_community.vectorstores import Chroma
 
 from rich import print
 
@@ -65,48 +63,51 @@ Recommendation Plan:
 
 5. Motivational Advice:
    - ...
-""" 
+"""
 
 teacher_prompt = ChatPromptTemplate.from_messages([
     SystemMessage(content=systemMessage),
     MessagesPlaceholder(variable_name="history"),
-   ("human", """
-   Current Date: {current_date}
+    ("human", """
+Current Date: {current_date}
 
-   Academic Schedule:
-   - Tests: {tests}
-   - Assignments: {assignments}
-   - Timetable: {timetable}
-   - Holidays: {holidays}
+Academic Schedule:
+- Tests: {tests}
+- Assignments: {assignments}
+- Timetable: {timetable}
+- Holidays: {holidays}
 
-   User Status:
-   {user_response}
+User Status:
+{user_response}
 
-   Career Goal: {career_goal}
-   Preferred Activities: {preferred_activities}
-   Available Free Time: {available_hours}
+Career Goal: {career_goal}
+Preferred Activities: {preferred_activities}
+Available Free Time: {available_hours}
 
-   User Query:
-   {user_query}
-   """)
+User Query:
+{user_query}
+""")
 ])
 
+model = ChatGroq(
+    model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+    temperature=0
+)
 
-model = ChatMistralAI()
 parser = StrOutputParser()
-
-
 chain = teacher_prompt | model | parser
 
 history = []
-print("----------Welcome to AI Teacher----------\n")
+MAX_HISTORY = 10
+
+print("----------Welcome to EduSmart AI Planner----------\n")
 print("----------Type 0 to exit----------\n")
 print("----------------Type 'clear' to reset conversation.-----------------\n")
+
 while True:
+    question = input("YOU: ").strip()
 
-    question = input("YOU: ")
-
-    if question.lower() == "0":
+    if question == "0":
         print("👋 Goodbye! Stay consistent and motivated!")
         break
 
@@ -115,36 +116,36 @@ while True:
         print("✅ Chat history cleared.\n")
         continue
 
+    if not question:
+        continue
+
     input_data = {
-        "current_date": "2026-04-11",
-        "tests": "DBMS Test on 2026-04-12",
-        "assignments": "None",
-        "timetable": "Operating Systems LAB at 10:00 AM",
-        "holidays": "None",
-        "user_response": "",
-        "career_goal": "Software Engineer",
-        "preferred_activities": "Coding, Problem Solving",
-        "available_hours": "3 hours",
+        "current_date": date.today().isoformat(),
+        "tests": os.getenv("TESTS", "None"),
+        "assignments": os.getenv("ASSIGNMENTS", "None"),
+        "timetable": os.getenv("TIMETABLE", "Not provided"),
+        "holidays": os.getenv("HOLIDAYS", "None"),
+        "user_response": os.getenv("USER_STATUS", ""),
+        "career_goal": os.getenv("CAREER_GOAL", "Software Engineer"),
+        "preferred_activities": os.getenv(
+            "PREFERRED_ACTIVITIES",
+            "Coding, Problem Solving"
+        ),
+        "available_hours": os.getenv("AVAILABLE_HOURS", "3 hours"),
         "user_query": question,
         "history": history
     }
 
     try:
-        # Generate response using the chain
         response = chain.invoke(input_data)
 
-        # Store messages in history
         history.append(HumanMessage(content=question))
         history.append(AIMessage(content=response))
+        history = history[-MAX_HISTORY:]
 
-        # Display AI response
-        print("\nAI Coach:\n")
+        print("\n[bold cyan]AI Coach:[/bold cyan]\n")
         print(response)
         print()
-
-        # Limit history to avoid token overflow
-        MAX_HISTORY = 10
-        history = history[-MAX_HISTORY:]
 
     except Exception as e:
         print(f"❌ Error: {e}")
